@@ -1,0 +1,9 @@
+# 依赖与运行数据
+node_modules/
+data/
+
+# 参考项目（zhihu++），仅本地查阅，不纳入版本管理
+zhihu-plus-plus/
+
+# 本地对拍验证工程与向量（不进版本库）
+.scratch/

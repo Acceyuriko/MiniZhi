@@ -1,0 +1,15 @@
+{
+  "name": "minizhi",
+  "private": true,
+  "version": "0.1.0",
+  "description": "轻量知乎阅读器：本机自用的只读知乎网页版（推荐/热榜/问题/评论）",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test \"server/test/*.test.mjs\""
+  }
+}
