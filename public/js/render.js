@@ -14,7 +14,9 @@ export function fmtTime(unixSec) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** 正文 html → 可安全展示的容器节点（媒体转本地代理、站内链接转 hash 路由） */
+/** 正文 html → 可展示的文档片段（媒体转本地代理、站内链接转 hash 路由）
+ *  注意：返回 doc.body 的“子节点们”而不是 body 本身——否则卡片里会嵌套
+ *  <body> 元素，继承全局 body 样式出现一块白底。 */
 export function renderContent(html, { onVideo } = {}) {
   const doc = new DOMParser().parseFromString(html, 'text/html')
 
@@ -85,7 +87,10 @@ export function renderContent(html, { onVideo } = {}) {
     div.replaceWith(holder)
   })
 
-  return doc.body
+  // 只把 body 的“子节点”搬进片段，不要把 <body> 元素本身带出去
+  const frag = document.createDocumentFragment()
+  while (doc.body.firstChild) frag.appendChild(doc.body.firstChild)
+  return frag
 }
 
 /** 渲染富文本片段到容器 */
