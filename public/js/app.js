@@ -1,5 +1,6 @@
 // app.js —— MiniZhi 应用入口：hash 路由、会话横幅、全局快捷键
 import { api, SessionError } from './api.js'
+import * as discard from './discard.js'
 import * as recommend from './views/recommend.js'
 import * as hot from './views/hot.js'
 import * as question from './views/question.js'
@@ -164,6 +165,19 @@ function initSettings() {
       saveBtn.disabled = false
     }
   })
+
+  // 屏蔽管理：清空「不喜欢/不看作者」本地黑名单
+  const refreshDiscardInfo = () => {
+    const c = discard.counts()
+    document.getElementById('discardInfo').textContent =
+      `本地屏蔽：${c.contents} 条内容 · ${c.authors} 位作者`
+  }
+  document.getElementById('discardClear').addEventListener('click', () => {
+    discard.clearAll()
+    refreshDiscardInfo()
+    toast('已清空屏蔽（推荐流刷新后生效）')
+  })
+  refreshDiscardInfo()
 }
 
 // ── 启动 ──────────────────────────────────────────────

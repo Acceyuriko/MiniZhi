@@ -161,8 +161,12 @@ button:disabled { opacity: .45; cursor: default; }
 /* 卡片脚注行 */
 .answer-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px dashed color-mix(in srgb, var(--line) 75%, transparent); color: var(--muted); font-size: 14px; }
 .answer-meta .ghost { color: var(--accent); padding: 2px 10px; border-radius: 999px; }
-.answer-meta .ghost:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
-.answer-meta .qlink { margin-left: auto; font-size: 13.5px; }
+.answer-meta .ghost:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: transparent; color: var(--accent); }
+.answer-meta .qlink { font-size: 13.5px; }
+/* 反馈按钮（不喜欢/不看作者）：低调灰字，悬停警示色 */
+.card-feedback { margin-left: auto; display: inline-flex; gap: 2px; }
+.card-feedback .ghost { color: var(--muted); font-size: 13px; }
+.card-feedback .ghost:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: transparent; color: var(--danger); }
 
 /* 底部/侧边阅读导航 */
 .navbar { display: flex; justify-content: center; gap: 14px; margin: 22px auto 6px; }

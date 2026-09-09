@@ -4,6 +4,7 @@ import { answerCard, navBar, authorBlock } from '../ui.js'
 import { esc, fmtTime, fillContent } from '../render.js'
 import { playVideoIn } from '../video.js'
 import { openComments } from '../comments.js'
+import * as discard from '../discard.js'
 
 // 会话级状态：切 Tab / 切路由回来不丢
 export const store = {
@@ -34,6 +35,7 @@ function normalizeFeedItem(item) {
   const qid = String((String(t.url ?? '').match(/\/question\/(\d+)/) ?? [])[1] ?? '')
   const author = t.author
     ? {
+        id: t.author.id ?? t.author.url_token ?? null,
         name: t.author.name,
         urlToken: t.author.url_token ?? t.author.urlToken,
         headline: t.author.headline,
@@ -68,7 +70,7 @@ export async function loadFirst({ fresh = false } = {}) {
   store.errored = null
   try {
     const json = await api.recommend(20)
-    const items = (json.data ?? []).map(normalizeFeedItem).filter(Boolean)
+    const items = discard.filterList((json.data ?? []).map(normalizeFeedItem).filter(Boolean))
     if (fresh) {
       store.items = items
       store.index = 0
@@ -86,16 +88,23 @@ export async function loadFirst({ fresh = false } = {}) {
   }
 }
 
-/** 尾部续页（自动追加一页，不移动当前条目） */
+/** 尾部续页（自动追加一页，不移动当前条目）。
+ *  被屏蔽的条目不入列：最多连追 3 页直到拿到可见内容或到底。 */
 async function appendMore() {
   if (!store.nextUrl || store.loading) return false
   store.loading = true
   try {
-    const json = await api.zh(store.nextUrl)
-    const items = (json.data ?? []).map(normalizeFeedItem).filter(Boolean)
-    store.items.push(...items)
-    store.nextUrl = json.paging?.next ?? null
-    return items.length > 0
+    let added = 0
+    for (let i = 0; i < 3; i++) {
+      if (!store.nextUrl) break
+      const json = await api.zh(store.nextUrl)
+      const items = discard.filterList((json.data ?? []).map(normalizeFeedItem).filter(Boolean))
+      store.items.push(...items)
+      added += items.length
+      store.nextUrl = json.paging?.next ?? null
+      if (items.length > 0 || !store.nextUrl) break
+    }
+    return added > 0
   } catch (err) {
     throw err
   } finally {
@@ -117,11 +126,67 @@ function scrollToCard(el) {
   })
 }
 
+/** 不喜欢该内容 / 不看该作者：云端反馈（尽力）+ 本地黑名单 + 立即移除当前条目 */
+async function handleDiscard(el, onNav, act, btn) {
+  const it = store.items[store.index]
+  if (!it) return
+  if (btn) btn.disabled = true
+  const authorMode = act === 'author'
+  if (authorMode && !it.author) {
+    document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: '这条内容没有作者信息' }))
+    return
+  }
+  // 1) 云端反馈（不阻塞本地；失败静默降级为本地屏蔽）
+  let cloudMsg = ''
+  const res = await discard.reportUninterested(it, authorMode ? 'author' : 'less_similar')
+  if (res.err) {
+    if (res.err instanceof SessionError) {
+      document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err: res.err } }))
+    } else {
+      cloudMsg = '（云端反馈失败，仅本地屏蔽）'
+    }
+  } else if (!res.sent) {
+    cloudMsg = '（该类型暂不支持云端反馈，仅本地屏蔽）'
+  }
+  // 2) 本地黑名单 + 移除
+  if (authorMode) {
+    discard.blockAuthor(it)
+    store.items = store.items.filter((x) => !discard.isAuthorBlocked(x))
+  } else {
+    discard.blockContent(it)
+    store.items.splice(store.index, 1)
+  }
+  // 3) 修复位置并重渲染
+  if (store.index >= store.items.length) {
+    store.index = Math.max(0, store.items.length - 1)
+  }
+  renderItemView(el, onNav, true)
+  scrollToCard(el)
+  document.dispatchEvent(
+    new CustomEvent('minizhi:toast', {
+      detail: (authorMode ? '已屏蔽该作者' : '已忽略该内容') + cloudMsg,
+    })
+  )
+}
+
 function renderItemView(el, onNav, anchor = false) {
   el.innerHTML = ''
   const it = store.items[store.index]
   if (!it) {
-    el.innerHTML = '<div class="empty">没有内容，点右上角“刷新”试试</div>'
+    // 可能当前页全被屏蔽/删空：还有下一页就自动追
+    if (store.nextUrl && !store.loading) {
+      el.innerHTML = '<div class="loading spin">加载更多…</div>'
+      appendMore()
+        .then(() => {
+          if (store.items.length > 0) renderItemView(el, onNav)
+          else el.innerHTML = '<div class="empty">没有内容，点右上角"刷新"试试</div>'
+        })
+        .catch((err) =>
+          document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err } }))
+        )
+    } else {
+      el.innerHTML = '<div class="empty">没有内容，点右上角“刷新”试试</div>'
+    }
     return
   }
   const meta = document.createElement('div')
@@ -153,6 +218,23 @@ function renderItemView(el, onNav, anchor = false) {
       a.textContent = '在知乎打开 ↗'
       wrap.appendChild(a)
     }
+    const card2 = document.createElement('div')
+    card2.className = 'card'
+    card2.style.cssText = 'padding:10px 16px;'
+    const fb = document.createElement('div')
+    fb.className = 'card-feedback'
+    for (const [act, label] of [
+      ['content', '不喜欢该内容'],
+      ['author', '不看该作者'],
+    ]) {
+      const b = document.createElement('button')
+      b.className = 'btn btn-ghost btn-sm'
+      b.textContent = label
+      b.addEventListener('click', () => handleDiscard(el, onNav, act, b))
+      fb.appendChild(b)
+    }
+    card2.appendChild(fb)
+    wrap.appendChild(card2)
   } else {
     const onQuestion = (qid, aid) => {
       if (!qid) {
@@ -174,6 +256,7 @@ function renderItemView(el, onNav, anchor = false) {
         if (mt === 'article') openComments('article', aid, cardEl, btn)
         else openComments('answer', aid, cardEl, btn)
       },
+      onDiscard: (act, a, btn) => handleDiscard(el, onNav, act, btn),
       onQuestion,
     })
     wrap.appendChild(card)

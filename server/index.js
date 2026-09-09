@@ -46,6 +46,7 @@ const ZHIHU_ALLOWED_PREFIXES = [
   '/api/v4/pins/',
   '/api/v4/comment_v5/',
   '/api/v4/video/play_info',
+  '/api/v4/zrec-feedback/',
   '/api/v4/members/',
 ]
 

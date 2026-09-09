@@ -94,6 +94,22 @@ export function answerCard(a, h = {}) {
     ext.className = 'qlink'
     meta.appendChild(ext)
   }
+  // 推荐流专属：不喜欢该内容 / 不看该作者（无回调则不渲染）
+  if (h.onDiscard) {
+    const fb = document.createElement('div')
+    fb.className = 'card-feedback'
+    for (const [act, label] of [
+      ['content', '不喜欢该内容'],
+      ['author', '不看该作者'],
+    ]) {
+      const b = document.createElement('button')
+      b.className = 'ghost'
+      b.textContent = label
+      b.addEventListener('click', () => h.onDiscard(act, a, b))
+      fb.appendChild(b)
+    }
+    meta.appendChild(fb)
+  }
   card.appendChild(meta)
   return card
 }
