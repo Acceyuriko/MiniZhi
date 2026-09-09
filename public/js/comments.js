@@ -68,11 +68,13 @@ function commentEl(c, { child = false } = {}) {
   nm.className = 'c-author'
   nm.textContent = author.name ?? '匿名用户'
   head.appendChild(nm)
-  if (author.headline) {
-    const hl = document.createElement('span')
-    hl.className = 'c-author muted'
-    hl.textContent = author.headline
-    head.appendChild(hl)
+  // 楼中楼回复他人时展示「回复 @xxx」（字段实测仅回复非根评论时存在）
+  const replied = c?.reply_to_author?.name
+  if (replied) {
+    const r = document.createElement('span')
+    r.className = 'c-reply'
+    r.textContent = `回复 @${replied}`
+    head.appendChild(r)
   }
   if (c?.created_time) {
     const t = document.createElement('span')
