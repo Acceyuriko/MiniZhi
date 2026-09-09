@@ -79,7 +79,18 @@
 - **排序语义实测**：问题 feeds `order=updated` → 按 updated_time 严格倒序（可作
   “时间”排序）；`order=created` 返回乱序（疑似回落默认，不可用）；默认=热度。
 - **评论**：`/api/v4/comment_v5/answers/{aid}/root_comment?order_by=default` 与
-  `/comment/{cid}/child_comment` 均可用；评论精确 id 从 comment.url 提取。
+  `/comment/{cid}/child_comment` 均可用；评论精确 id 从 comment.url 提取
+  （**注意 url 两种形态：`/comment/{id}` 与 `/comments/{id}`**，字段也时有时无，
+  → 前端兜底逻辑：url 正则 || comment.id 字符串字段）。
+- **字段稳定性坑（2026-09 实测）**：知乎接口的 `url` 字段**时有时无**（热榜条目
+  的 target.url、根评论的 url 都遇到过缺失/变体）→ 前端一律「url 正则提取 ||
+  id 兜底」，id 靠 parseZhihuJson 保精度字符串化后可直接用。
+- **play_info 通道已验证**：POST /api/v4/video/play_info?r={videoId} + JSON body
+  {content_id,content_type_str,video_id,scene_code:'answer_detail_web',
+  is_only_video:true} + 头 x-app-za:OS=webplayer（照 plus-plus）→ 知乎正常受理
+  （假 id 返回业务错 VideoIDErrorException 而非 403，通道 OK）。真实视频样本在
+  本会话推荐流/热榜首屏均未出现（12 页推荐全 answer），待用户遇到带视频内容时
+  实测 mp4/m3u8 播放。
 - **会话实测**：粘贴 cookie + 签名请求已打通（账号 Acceyuriko）。
 - 参考实现对拍工程在 `.scratch/zse-vec`（cargo path 依赖 rs-zse-sign），向量文件
   `.scratch/zse-vectors.txt`；探测脚本 `.scratch/probe*.mjs`，样本存

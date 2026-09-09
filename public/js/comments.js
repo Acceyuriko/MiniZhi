@@ -8,9 +8,10 @@ const dialog = () => document.getElementById('comments')
 const body = () => document.getElementById('commentsBody')
 
 function cidOf(comment) {
-  // 知乎后端会对超长数字自舍入：id 一律从 url 提取
-  const m = String(comment?.url ?? '').match(/\/comment\/(\d+)/)
-  return m?.[1] ?? null
+  // 知乎后端会对超长数字自舍入：id 优先从 url 提取；
+  // url 有两种形态（/comment/{id} 与 /comments/{id}），也可能缺失 → 回退 id 字段
+  const m = String(comment?.url ?? '').match(/\/comments?\/(\d+)/)
+  return m?.[1] ?? comment?.id ?? null
 }
 
 function errOut(err) {
