@@ -6,18 +6,20 @@
   <meta name="referrer" content="no-referrer">
   <title>MiniZhi</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Tailwind v4 运行时（本地 vendor，离线可用，零构建） -->
+  <script src="vendor/tailwind.browser.js"></script>
 </head>
-<body>
+<body class="min-h-screen">
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="#recommend">MiniZhi</a>
+      <a class="brand select-none" href="#recommend">MiniZhi</a>
       <nav class="tabs">
-        <a href="#recommend" data-tab="recommend">推荐</a>
-        <a href="#hot" data-tab="hot">热榜</a>
+        <a href="#recommend" data-tab="recommend" class="select-none">推荐</a>
+        <a href="#hot" data-tab="hot" class="select-none">热榜</a>
       </nav>
       <div class="topbar-right">
-        <button id="btnRefresh" class="ghost" title="刷新当前列表">刷新</button>
-        <span id="who" class="who" title="点击设置登录"></span>
+        <button id="btnRefresh" class="btn btn-ghost btn-sm" title="刷新当前列表">↻ 刷新</button>
+        <span id="who" class="who" title="点击设置登录">…</span>
       </div>
     </div>
   </header>
@@ -29,21 +31,21 @@
   <dialog id="settings">
     <form method="dialog" class="settings-form">
       <h2>登录设置</h2>
-      <p class="hint">在 zhihu.com 登录后：F12 → Network → 任意 <code>api</code> 请求 →
+      <p class="hint leading-relaxed">在 zhihu.com 登录后：F12 → Network → 任意 <code>api</code> 请求 →
         Request Headers → 复制整行 <code>Cookie:</code> 的值粘贴到下面：</p>
       <textarea id="cookieInput" placeholder="粘贴完整 Cookie 头字符串"></textarea>
-      <div class="row">
-        <button value="cancel">取消</button>
-        <button type="button" class="primary" id="cookieSave">保存并校验</button>
+      <div class="row justify-end">
+        <button value="cancel" class="btn">取消</button>
+        <button type="button" class="btn btn-primary" id="cookieSave">保存并校验</button>
       </div>
-      <p id="settingsMsg" class="hint"></p>
+      <p id="settingsMsg" class="hint mt-2"></p>
     </form>
   </dialog>
 
   <dialog id="comments">
     <div class="comments-head">
-      <h2>评论</h2>
-      <button id="commentsClose" class="ghost">关闭</button>
+      <h2>💬 评论</h2>
+      <button id="commentsClose" class="btn btn-ghost btn-sm">关闭</button>
     </div>
     <div id="commentsBody" class="comments-body"></div>
   </dialog>

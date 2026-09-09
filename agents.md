@@ -45,6 +45,12 @@
   不落盘**（浏览器自身 HTTP 缓存负责常规磁盘缓存）。
 - **技术栈**：Node.js（`node:http` 起步、极简依赖）+ 原生 HTML/CSS/JS 前端，
   零构建；包管理 pnpm。
+- **前端样式（v2，用户指定 tailwind）**：Tailwind v4 运行时版已 vendor 本地化
+  （`public/vendor/tailwind.browser.js` + LICENSE，离线可用，零构建保持）；
+  视觉资产分两层——组件层（`.card/.btn/.hot-list/…`）用 style.css 手写 CSS 变量
+  体系（glass 顶栏、大圆角、柔和阴影、明暗双主题），布局/间距用 Tailwind
+  utility。注意：style.css 是 unlayered 样式，优先级高于 tailwind 的 layer，
+  两者别在同一元素上写同一属性。
 - **UI**：单页应用，顶部 Tab（推荐/热榜）；单栏阅读，内容区最宽约 1000px 居中
   （用户屏幕 1920 宽，宽度留配置可调）；亮/暗主题跟随系统。
 - **仓库**：MiniZhi 为私有仓库；`zhihu-plus-plus/`（参考项目 clone）与运行数据

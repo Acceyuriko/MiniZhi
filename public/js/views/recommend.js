@@ -225,10 +225,10 @@ export function mount(container) {
     },
     async step(d) {
       if (d > 0) {
-        const btn = el.querySelector('.navbar button.primary')
+        const btn = el.querySelector('.navbar .btn-primary')
         btn?.click()
       } else {
-        const prev = el.querySelector('.navbar button:not(.primary)')
+        const prev = el.querySelector('.navbar .btn:not(.btn-primary)')
         prev?.click()
       }
     },

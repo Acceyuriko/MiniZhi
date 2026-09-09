@@ -220,8 +220,8 @@ export function mount(container, { qid, sort = 'default', from = null }) {
       }
     },
     step(d) {
-      if (d > 0) el.querySelector('.navbar button.primary')?.click()
-      else el.querySelector('.navbar button:not(.primary)')?.click()
+      if (d > 0) el.querySelector('.navbar .btn-primary')?.click()
+      else el.querySelector('.navbar .btn:not(.btn-primary)')?.click()
     },
     onFirstPaint: () => {
       const key = `${qid}/${sort}`

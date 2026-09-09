@@ -25,6 +25,7 @@ function showBanner(msg, action) {
   b.appendChild(span)
   if (action) {
     const btn = document.createElement('button')
+    btn.className = 'btn'
     btn.textContent = action.label
     btn.addEventListener('click', action.onClick)
     b.appendChild(btn)

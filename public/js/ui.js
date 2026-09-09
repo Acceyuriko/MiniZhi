@@ -103,10 +103,11 @@ export function navBar({ onPrev, onNext, prevText = '◀ 上一条', nextText = 
   const bar = document.createElement('div')
   bar.className = 'navbar'
   const prev = document.createElement('button')
+  prev.className = 'btn'
   prev.textContent = prevText
   prev.addEventListener('click', onPrev)
   const next = document.createElement('button')
-  next.className = 'primary'
+  next.className = 'btn btn-primary'
   next.textContent = nextText
   next.addEventListener('click', onNext)
   bar.appendChild(prev)
