@@ -61,6 +61,28 @@ class RateLimiter {
 const limiter = new RateLimiter()
 
 /**
+ * 纯页面 GET（无签名！实测：HTML 页面请求带签名头反而 404）。
+ * 用于抓 SSR 问题页等。同样走风控队列。
+ */
+export async function plainGetText(url, { referer = 'https://www.zhihu.com/' } = {}) {
+  const session = loadSession()
+  return limiter.run(async () => {
+    const res = await fetch(url, {
+      headers: {
+        'user-agent': UA,
+        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        referer,
+        ...(session?.cookie ? { cookie: session.cookie } : {}),
+      },
+    })
+    const text = await res.text()
+    if (!res.ok) throw new ZhihuError(res.status, '页面抓取失败 ' + text.slice(0, 120))
+    return text
+  })
+}
+
+/**
  * 知乎的雪花 ID（问题/回答/文章/用户）经常超过 JS 安全整数 2^53，JSON.parse
  * 会悄悄丢精度，之后用它拼请求 URL 就全错（如 2080685915270296000 会被舍入）。
  * 解决办法：解析前把字符串之外的 ≥16 位整数字面量包成字符串（这类字段全是

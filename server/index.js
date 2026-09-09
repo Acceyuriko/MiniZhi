@@ -16,6 +16,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as session from './lib/session.js'
 import * as zhihu from './lib/zhihu.js'
+import * as question from './lib/question.js'
+import { fetchMedia } from './lib/proxy.js'
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PUBLIC_DIR = path.join(ROOT, 'public')
@@ -138,6 +140,21 @@ async function handleApi(req, res, url) {
       return sendJson(res, 200, json)
     }
 
+    const qm = route.match(/^\/api\/question\/(\d+)$/)
+    if (qm && req.method === 'GET') {
+      const order = url.searchParams.get('order') === 'updated' ? 'updated' : 'default'
+      const limit = Math.min(Number(url.searchParams.get('limit')) || 5, 20)
+      const page = await question.questionFirstPage(qm[1], { order, limit })
+      return sendJson(res, 200, page)
+    }
+
+    if (route === '/api/question/next' && req.method === 'GET') {
+      const nextUrl = url.searchParams.get('url') ?? ''
+      const order = url.searchParams.get('order') === 'updated' ? 'updated' : 'default'
+      const page = await question.questionNextPage(nextUrl, { order })
+      return sendJson(res, 200, page)
+    }
+
     return sendJson(res, 404, { error: 'unknown api' })
   } catch (err) {
     if (err instanceof zhihu.SessionError) {
@@ -147,7 +164,8 @@ async function handleApi(req, res, url) {
       return sendJson(res, 502, { error: err.message })
     }
     console.error('[minizhi] api error:', err)
-    return sendJson(res, 500, { error: String(err?.message ?? err) })
+    const status = typeof err?.status === 'number' && err.status >= 400 && err.status < 600 ? err.status : 500
+    return sendJson(res, status, { error: String(err?.message ?? err) })
   }
 }
 
@@ -158,6 +176,24 @@ const server = createServer((req, res) => {
       console.error('[minizhi] unhandled:', err)
       if (!res.headersSent) sendJson(res, 500, { error: String(err?.message ?? err) })
     })
+    return
+  }
+  if (url.pathname === '/media' && req.method === 'GET') {
+    const target = url.searchParams.get('url') ?? ''
+    if (!target || !/^https?:\/\//.test(target)) return sendJson(res, 400, { error: 'media url 参数缺失' })
+    fetchMedia(target, session.loadSession()?.cookie ?? null)
+      .then((r) => {
+        res.writeHead(r.status, {
+          'content-type': r.contentType ?? 'application/octet-stream',
+          'cache-control': r.fromCache ? 'private, max-age=3600' : 'private, max-age=60',
+          'x-media-from-cache': String(r.fromCache),
+        })
+        res.end(r.body)
+      })
+      .catch((err) => {
+        console.error('[minizhi] media proxy error:', err)
+        if (!res.headersSent) sendJson(res, 502, { error: String(err?.message ?? err) })
+      })
     return
   }
   serveStatic(req, res, url.pathname)
