@@ -155,7 +155,7 @@ function renderItemView(el, onNav) {
       onNav?.()
     }
     const card = answerCard(it, {
-      onComment: (a) => {
+      onComment: (a, btn, cardEl) => {
         const mt = a.machineType ?? 'answer'
         if (mt === 'pin') {
           document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: '想法的评论暂不支持' }))
@@ -163,7 +163,8 @@ function renderItemView(el, onNav) {
         }
         const aid = a.answerId || a.id
         if (!aid) return
-        openComments(mt === 'article' ? 'article' : 'answer', aid)
+        if (mt === 'article') openComments('article', aid, cardEl, btn)
+        else openComments('answer', aid, cardEl, btn)
       },
       onQuestion,
     })

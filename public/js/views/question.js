@@ -148,8 +148,8 @@ function render(el) {
   el.appendChild(prog)
 
   const card = answerCard(it, {
-    onComment: (a) => {
-      if (a.id) openComments('answer', a.id)
+    onComment: (a, btn, cardEl) => {
+      if (a.id) openComments('answer', a.id, cardEl, btn)
     },
     onQuestion: () => {}, // 已处于问题页
   })

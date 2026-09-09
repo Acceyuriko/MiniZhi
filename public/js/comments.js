@@ -1,11 +1,9 @@
-// comments.js —— 评论对话框（一级 + 楼中楼，只读，默认排序）
+// comments.js —— 评论区（内联展开在回答卡片下方，不弹框）
+// 打开/收起：openComments(type, id, anchor, btn)；同一时刻只展开一处。
 import { api } from './api.js'
 import { fillContent, fmtTime, esc } from './render.js'
 
-let current = null // { type:'answer'|'article'|'pin', id, rootNext, loading }
-
-const dialog = () => document.getElementById('comments')
-const body = () => document.getElementById('commentsBody')
+let open = null // { type, id, box, btn }
 
 function cidOf(comment) {
   // 知乎后端会对超长数字自舍入：id 优先从 url 提取；
@@ -18,15 +16,47 @@ function errOut(err) {
   document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err } }))
 }
 
-export function openComments(type, id) {
-  current = { type, id, rootNext: null, loading: false }
-  dialog().showModal()
-  loadRoot(true)
+const openLabel = '收起评论'
+
+/** 展开/收起一处评论；anchor 为所属卡片元素，btn 为触发按钮 */
+export function openComments(type, id, anchor, btn) {
+  const key = `${type}:${id}`
+  // 点同一个 → 收起
+  if (open && open.box.isConnected && open.key === key) {
+    closeComments()
+    return
+  }
+  // 已开着别处 → 先收起（旧 box 可能已随视图重渲染断开，remove 是安全的）
+  if (open) closeComments()
+
+  const box = document.createElement('div')
+  box.className = 'comments-inline'
+  const head = document.createElement('div')
+  head.className = 'comments-inline-head'
+  const title = document.createElement('h3')
+  title.textContent = '💬 评论'
+  const closeBtn = document.createElement('button')
+  closeBtn.className = 'btn btn-ghost btn-sm'
+  closeBtn.textContent = '关闭'
+  closeBtn.addEventListener('click', closeComments)
+  head.appendChild(title)
+  head.appendChild(closeBtn)
+  box.appendChild(head)
+
+  const list = document.createElement('div')
+  box.appendChild(list)
+  anchor.after(box)
+  if (btn) btn.textContent = openLabel
+
+  open = { key, type, id, box, list, btn }
+  loadRoot(true).catch(errOut)
 }
 
-function closeComments() {
-  dialog().close()
-  current = null
+export function closeComments() {
+  if (!open) return
+  open.box.remove()
+  if (open.btn) open.btn.textContent = '💬 评论'
+  open = null
 }
 
 function commentEl(c, { child = false } = {}) {
@@ -34,21 +64,32 @@ function commentEl(c, { child = false } = {}) {
   el.className = 'comment'
   const author = c?.author ?? {}
   const head = document.createElement('div')
-  head.innerHTML = `<span class="c-author">${esc(author.name ?? '匿名用户')}</span>` +
-    (author.headline ? `<span class="c-author muted">${esc(author.headline)}</span>` : '')
+  const nm = document.createElement('span')
+  nm.className = 'c-author'
+  nm.textContent = author.name ?? '匿名用户'
+  head.appendChild(nm)
+  if (author.headline) {
+    const hl = document.createElement('span')
+    hl.className = 'c-author muted'
+    hl.textContent = author.headline
+    head.appendChild(hl)
+  }
+  if (c?.created_time) {
+    const t = document.createElement('span')
+    t.className = 'c-time'
+    t.textContent = fmtTime(c.created_time)
+    head.appendChild(t)
+  }
   el.appendChild(head)
 
   const content = document.createElement('div')
   content.className = 'c-body'
-  fillContent(content, c?.content ?? '', {
-    onVideo: () => errOut(new Error('评论内视频暂不支持')),
-  })
+  fillContent(content, c?.content ?? '')
   el.appendChild(content)
 
   const meta = document.createElement('div')
   meta.className = 'c-actions'
-  meta.innerHTML = `<span>${c?.like_count ?? 0} 赞</span>` +
-    (c?.created_time ? `<span>${fmtTime(c.created_time)}</span>` : '') +
+  meta.innerHTML = `<span>👍 ${c?.like_count ?? 0}</span>` +
     (c?.child_comment_count > 0 ? `<span>${c.child_comment_count} 条回复</span>` : '')
   el.appendChild(meta)
 
@@ -57,7 +98,7 @@ function commentEl(c, { child = false } = {}) {
     const box = document.createElement('div')
     box.className = 'c-children hidden'
     const btn = document.createElement('button')
-    btn.className = 'ghost'
+    btn.className = 'btn btn-ghost btn-sm'
     btn.textContent = `展开 ${c.child_comment_count} 条回复`
     const updateLabel = () => {
       btn.textContent = box.classList.contains('hidden')
@@ -80,11 +121,15 @@ function commentEl(c, { child = false } = {}) {
         const json = await api.childComments(cid)
         box.dataset.loaded = '1'
         const list = json?.data ?? []
-        if (list.length === 0) box.innerHTML = '<div class="muted">暂无回复</div>'
+        if (list.length === 0) {
+          const none = document.createElement('div')
+          none.className = 'muted'
+          none.textContent = '暂无回复'
+          box.appendChild(none)
+        }
         for (const cc of list) {
           const childEl = commentEl(cc, { child: true })
-          const ccid = cidOf(cc)
-          if (ccid && (cc?.child_comment_count ?? 0) > 0) {
+          if (cidOf(cc) && (cc?.child_comment_count ?? 0) > 0) {
             const note = document.createElement('div')
             note.className = 'muted'
             note.textContent = '… 该回复下还有更深楼层，暂不展开'
@@ -107,50 +152,37 @@ function commentEl(c, { child = false } = {}) {
   return el
 }
 
+/** 加载第一页（或续页）到 open.list */
 async function loadRoot(reset) {
-  if (!current || current.loading) return
-  current.loading = true
-  const holder = body()
-  if (reset) {
-    holder.innerHTML = '<div class="loading">加载评论…</div>'
-  }
+  if (!open) return
+  if (!reset && !open.nextUrl) return
+  const list = open.list
+  if (reset) list.innerHTML = '<div class="loading spin">加载评论…</div>'
   try {
     let json
-    if (reset) {
-      json = await api.comments(current.type, current.id)
-    } else if (current.rootNext) {
-      json = await api.zh(current.rootNext)
-    } else {
-      return
-    }
-    if (reset) holder.innerHTML = ''
-    const list = json?.data ?? []
-    for (const c of list) holder.appendChild(commentEl(c))
-    current.rootNext = json?.paging?.next ?? ''
-    const end = json?.paging?.is_end !== false && !current.rootNext
-    if (!end) {
+    if (reset) json = await api.comments(open.type, open.id)
+    else json = await api.zh(open.nextUrl)
+    if (!open || !list.isConnected) return // 用户已切换/收起
+    if (reset) list.innerHTML = ''
+    const items = json?.data ?? []
+    for (const c of items) list.appendChild(commentEl(c))
+    open.nextUrl = json?.paging?.next ?? ''
+    if (open.nextUrl) {
       const more = document.createElement('button')
-      more.className = 'loadmore'
+      more.className = 'btn loadmore'
       more.textContent = '加载更多评论'
       more.addEventListener('click', () => {
         more.remove()
-        loadRoot(false)
+        loadRoot(false).catch(errOut)
       })
-      holder.appendChild(more)
-    } else if (reset && list.length === 0) {
-      holder.innerHTML = '<div class="empty">还没有评论</div>'
+      list.appendChild(more)
+    } else if (reset && items.length === 0) {
+      const none = document.createElement('div')
+      none.className = 'empty'
+      none.textContent = '还没有评论'
+      list.appendChild(none)
     }
   } catch (err) {
-    if (reset) holder.innerHTML = ''
-    errOut(err)
-  } finally {
-    current.loading = false
+    if (open?.list?.isConnected) errOut(err)
   }
-}
-
-export function initComments() {
-  document.getElementById('commentsClose').addEventListener('click', closeComments)
-  dialog().addEventListener('click', (e) => {
-    if (e.target === dialog()) closeComments()
-  })
 }

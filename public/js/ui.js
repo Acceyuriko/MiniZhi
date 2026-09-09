@@ -83,7 +83,7 @@ export function answerCard(a, h = {}) {
   const btn = document.createElement('button')
   btn.className = 'ghost'
   btn.textContent = '💬 评论'
-  btn.addEventListener('click', () => h.onComment?.(a))
+  btn.addEventListener('click', () => h.onComment?.(a, btn, card))
   meta.appendChild(btn)
   if (a.url && !a.question) {
     const ext = document.createElement('a')

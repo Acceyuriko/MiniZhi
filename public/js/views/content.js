@@ -46,9 +46,9 @@ export function mount(container, { kind, id }) {
 
   if (kind === 'article') {
     const card = answerCard(it, {
-      onComment: (a) => {
+      onComment: (a, btn, cardEl) => {
         const aid = a.answerId || a.id
-        if (aid) openComments('article', aid)
+        if (aid) openComments('article', aid, cardEl, btn)
       },
       onQuestion: () => {},
     })

@@ -1,6 +1,5 @@
 // app.js —— MiniZhi 应用入口：hash 路由、会话横幅、全局快捷键
 import { api, SessionError } from './api.js'
-import { initComments } from './comments.js'
 import * as recommend from './views/recommend.js'
 import * as hot from './views/hot.js'
 import * as question from './views/question.js'
@@ -126,7 +125,7 @@ function keydown(e) {
   if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
   const tag = (e.target.tagName || '').toLowerCase()
   if (tag === 'textarea' || tag === 'input' || tag === 'select') return
-  if (settingsEl().open || document.getElementById('comments').open) return
+  if (settingsEl().open) return
   const d = e.key === 'ArrowRight' ? 1 : -1
   if ((currentRoute.name === 'recommend' || currentRoute.name === 'question') && currentView) {
     e.preventDefault()
@@ -167,7 +166,6 @@ function initSettings() {
 
 // ── 启动 ──────────────────────────────────────────────
 async function boot() {
-  initComments()
   initSettings()
 
   document.getElementById('btnRefresh').addEventListener('click', () => {
