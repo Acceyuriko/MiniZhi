@@ -50,6 +50,41 @@
 - **仓库**：MiniZhi 为私有仓库；`zhihu-plus-plus/`（参考项目 clone）与运行数据
   目录均已 gitignore；提交用 Conventional Commits，不推送。
 
+## 实测经验（2026 年实弹验证，务必遵守）
+
+- **签名可用**：自研 x-zse-96 已通过 Rust 参考实现对拍（5/5），并被知乎真实
+  服务器接受（`/api/v4/me` 正常返回）。实测 **full（含 query）与 path（纯路径）
+  两种签名口径都能过**（服务端实际按 pathname 校验），session.signMode 保持
+  `'full'`（与参考实现一致）。
+- **HTML 页面请求绝不带签名头**（带了反而 404）；只有 /api/ 请求需要签名。
+- **雪花 id 精度陷阱**：知乎问题/回答/文章 id 是 19 位量级（> 2^53）。JSON 里的
+  数字字段**本身可能已被知乎后端舍入**（实测热榜 `target.id` 与其 `url` 里嵌的
+  id 不一致，按 target.id 请求会 404！）。因此：
+  1. 解析一律用 `parseZhihuJson`（把 ≥16 位整数字面量保精度转成字符串）；
+  2. **取 id 优先从 `url` 字符串提取**（`/question/(\d+)`、`/answer/(\d+)`），
+     不信任纯数字 id 字段。
+- **答案正文获取（2026 新版知乎已重构，重点！）**：
+  - 旧式 `/api/v4/answers/{id}?include=...`、`/feeds?include=...`（offset 分页）
+    **已废弃**：任何 include 参数 → HTML 404；无 include 的回答详情不含正文。
+  - 列表端点（如 members/*/answers）仍支持 include；热榜/推荐流自带正文。
+  - **问题页正文走 SSR**：GET `https://www.zhihu.com/question/{qid}`（纯净浏览器
+    头 + cookie，**无签名**）→ 取 `<script id="js-initialData" type="text/json">`
+    → `initialState.question.answers.{qid}`：`ids`（有序回答引用+cursor）、
+    `next`（下一页完整 URL：**cursor 参数 + `data[*].xxx` 长 include**，已被验证
+    返回带正文回答）、`sessionId`；`initialState.entities.answers`（正文等）、
+    `entities.questions`（标题/计数）。回答实体字段为 **camelCase**，API 返回为
+    **snake_case**。
+  - feeds cursor 翻页 URL 的 `paging.next` 有 `zhihu.com//api/` **双斜杠怪癖**，
+    使用前必须清洗；snake_case 回答 content 字段与正文同在 target 上。
+- **排序语义实测**：问题 feeds `order=updated` → 按 updated_time 严格倒序（可作
+  “时间”排序）；`order=created` 返回乱序（疑似回落默认，不可用）；默认=热度。
+- **评论**：`/api/v4/comment_v5/answers/{aid}/root_comment?order_by=default` 与
+  `/comment/{cid}/child_comment` 均可用；评论精确 id 从 comment.url 提取。
+- **会话实测**：粘贴 cookie + 签名请求已打通（账号 Acceyuriko）。
+- 参考实现对拍工程在 `.scratch/zse-vec`（cargo path 依赖 rs-zse-sign），向量文件
+  `.scratch/zse-vectors.txt`；探测脚本 `.scratch/probe*.mjs`，样本存
+  `.scratch/samples/`。均 gitignore。
+
 ## 明确不做（一期及以后暂缓）
 
 搜索、关注页、消息、互动（赞同/评论/创作）、话题页、盐选内容过滤、跨设备部署。
