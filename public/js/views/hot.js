@@ -1,5 +1,5 @@
 // hot.js —— 全站热榜视图（50 条，手动刷新，点击进问题页）
-import { api } from './api.js'
+import { api } from '../api.js'
 import { esc } from '../render.js'
 
 export const store = { items: [], updatedAt: 0 }

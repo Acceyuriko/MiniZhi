@@ -1,9 +1,9 @@
 // recommend.js —— 推荐流视图：单条大卡片、会话级记忆、尾部自动续页
-import { api, SessionError } from './api.js'
-import { answerCard, navBar, authorBlock } from './ui.js'
-import { esc, fmtTime, fillContent } from './render.js'
-import { playVideoIn } from './video.js'
-import { openComments } from './comments.js'
+import { api, SessionError } from '../api.js'
+import { answerCard, navBar, authorBlock } from '../ui.js'
+import { esc, fmtTime, fillContent } from '../render.js'
+import { playVideoIn } from '../video.js'
+import { openComments } from '../comments.js'
 
 // 会话级状态：切 Tab / 切路由回来不丢
 export const store = {
