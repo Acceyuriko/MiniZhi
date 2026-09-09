@@ -109,7 +109,15 @@ function idOfUrl(url) {
   return { qid: q ?? null, aid: a ?? null }
 }
 
-function renderItemView(el, onNav) {
+/** 平滑滚动到本视图的回答卡片（避开顶栏），用于翻页后定位 */
+function scrollToCard(el) {
+  requestAnimationFrame(() => {
+    const card = el.querySelector('.card')
+    card?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  })
+}
+
+function renderItemView(el, onNav, anchor = false) {
   el.innerHTML = ''
   const it = store.items[store.index]
   if (!it) {
@@ -177,13 +185,15 @@ function renderItemView(el, onNav) {
     onPrev: async () => {
       if (store.index > 0) {
         store.index--
-        renderItemView(el, onNav)
+        renderItemView(el, onNav, true)
+        scrollToCard(el)
       }
     },
     onNext: async () => {
       if (store.index + 1 < store.items.length) {
         store.index++
-        renderItemView(el, onNav)
+        renderItemView(el, onNav, true)
+        scrollToCard(el)
         return
       }
       if (!store.nextUrl || store.loading) {
@@ -195,7 +205,8 @@ function renderItemView(el, onNav) {
         await appendMore()
         if (store.index + 1 < store.items.length) {
           store.index++
-          renderItemView(el, onNav)
+          renderItemView(el, onNav, true)
+          scrollToCard(el)
         }
       } catch (err) {
         document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err } }))

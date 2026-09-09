@@ -1,7 +1,7 @@
 // question.js —— 问题页视图：标题 + 排序切换 + 单回答阅读 + 定位来源回答
 import { api } from '../api.js'
 import { answerCard, navBar } from '../ui.js'
-import { fmtTime } from '../render.js'
+import { fmtTime, fillContent } from '../render.js'
 import { openComments } from '../comments.js'
 
 export const store = {
@@ -67,6 +67,14 @@ async function locate(fromAid, maxPages = 5) {
   }
 }
 
+/** 翻页后平滑滚动到回答卡片（避开顶栏），不回到页面顶部 */
+function scrollToCard(el) {
+  requestAnimationFrame(() => {
+    const card = el.querySelector('.card')
+    card?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  })
+}
+
 function render(el) {
   el.innerHTML = ''
   const it = store.items[store.index]
@@ -96,11 +104,11 @@ function render(el) {
   meta.textContent = bits.join(' · ')
   head.appendChild(meta)
   if (store.question?.detail) {
+    // 问题描述全文展示（不截断）
     const d = document.createElement('div')
     d.className = 'content-body'
-    const div = document.createElement('div')
-    div.textContent = store.question.detail.replace(/<[^>]*>/g, '').slice(0, 400)
-    d.appendChild(div)
+    d.style.cssText = 'font-size:16px;margin:2px 0 4px;'
+    fillContent(d, store.question.detail)
     head.appendChild(d)
   }
   el.appendChild(head)
@@ -119,8 +127,7 @@ function render(el) {
       store.items = []
       store.nextUrl = null
       store.question = null
-      await view.refresh()
-      render(el)
+      await view.refresh() // refresh 内部已 render
     })
     tabs.appendChild(b)
   }
@@ -161,8 +168,8 @@ function render(el) {
     onPrev: () => {
       if (store.index > 0) {
         store.index--
-        window.scrollTo({ top: 0 })
         render(el)
+        scrollToCard(el)
       } else {
         document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: '已经是第一个回答' }))
       }
@@ -170,8 +177,8 @@ function render(el) {
     onNext: async () => {
       if (store.index + 1 < store.items.length) {
         store.index++
-        window.scrollTo({ top: 0 })
         render(el)
+        scrollToCard(el)
         return
       }
       if (!store.nextUrl || store.loading) {
@@ -183,8 +190,8 @@ function render(el) {
         await appendMore()
         if (store.index + 1 < store.items.length) {
           store.index++
-          window.scrollTo({ top: 0 })
           render(el)
+          scrollToCard(el)
         }
       } catch (err) {
         document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err } }))

@@ -98,6 +98,8 @@ function parseHash() {
 async function navigate() {
   const route = parseHash()
   currentRoute = route
+  // 路由切换视为打开新页面：回到顶部
+  window.scrollTo({ top: 0 })
   // Tab 高亮
   document.querySelectorAll('.tabs a').forEach((a) => {
     a.classList.toggle('active', a.dataset.tab === (route.name === 'question' || route.name === 'content' ? '' : route.name))

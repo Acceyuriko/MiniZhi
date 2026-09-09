@@ -167,18 +167,21 @@ button:disabled { opacity: .45; cursor: default; }
 /* 底部/侧边阅读导航 */
 .navbar { display: flex; justify-content: center; gap: 14px; margin: 22px auto 6px; }
 .navbar .btn { padding: 12px 34px; font-size: 15.5px; border-radius: 999px; box-shadow: var(--shadow-float); }
-/* 宽屏：翻页按钮吸附内容列左右两侧、垂直居中，无需滚动到底 */
+/* 宽屏：两个翻页按钮竖排悬浮在右侧、垂直居中，无需滚动到底 */
 @media (min-width: 1150px) {
   .navbar {
-    position: fixed; top: 50%; left: 0; right: 0; transform: translateY(-50%);
-    z-index: 40; margin: 0; justify-content: space-between;
-    padding: 0 max(16px, calc((100vw - 1040px) / 2 - 158px));
+    position: fixed; top: 50%; transform: translateY(-50%);
+    right: max(16px, calc((100vw - 1040px) / 2 - 158px));
+    z-index: 40; margin: 0; flex-direction: column; align-items: stretch;
     pointer-events: none;
   }
   .navbar .btn { pointer-events: auto; backdrop-filter: blur(8px); }
   .navbar .btn:hover { transform: translateY(-1px); }
   .navbar .btn:active { transform: scale(0.96); }
 }
+
+/* 翻页后把回答锚到视口合适位置（避开顶栏） */
+.card { scroll-margin-top: 78px; }
 .reader-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; color: var(--muted); font-size: 13.5px; margin: 2px 4px 12px; }
 .reader-meta b { color: var(--fg); font-weight: 650; }
 

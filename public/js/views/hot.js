@@ -57,8 +57,6 @@ export function mount(container) {
       const bits = []
       if (it.answerCount != null) bits.push(`${it.answerCount} 回答`)
       if (it.followerCount != null) bits.push(`${it.followerCount} 关注`)
-      if (it.heat != null) bits.push(`热度 ${it.heat}`)
-      if (it.excerpt) bits.push(it.excerpt)
       sub.textContent = bits.join(' · ')
       title.appendChild(sub)
       li.appendChild(rank)
