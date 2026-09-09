@@ -150,8 +150,14 @@ async function handleApi(req, res, url) {
     if (qm && req.method === 'GET') {
       const order = url.searchParams.get('order') === 'updated' ? 'updated' : 'default'
       const limit = Math.min(Number(url.searchParams.get('limit')) || 5, 20)
-      const page = await question.questionFirstPage(qm[1], { order, limit })
-      return sendJson(res, 200, page)
+      try {
+        const page = await question.questionFirstPage(qm[1], { order, limit })
+        return sendJson(res, 200, page)
+      } catch (err) {
+        console.error('[minizhi] question endpoint error:', err?.stack ?? err)
+        const status = typeof err?.status === 'number' ? err.status : 500
+        return sendJson(res, status, { error: String(err?.message ?? err) })
+      }
     }
 
     if (route === '/api/question/next' && req.method === 'GET') {

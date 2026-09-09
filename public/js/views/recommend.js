@@ -25,7 +25,7 @@ function normalizeFeedItem(item) {
   if (!kind) return null
   const question = t.question
     ? {
-        id: String((String(t.question.url ?? '').match(/\/question\/(\d+)/) ?? [])[1] ?? ''),
+        id: String((String(t.question.url ?? '').match(/\/question\/(\d+)/) ?? [])[1] ?? t.question.id ?? ''),
         title: t.question.title ?? '',
         answerCount: t.question.answer_count ?? t.question.answerCount,
       }

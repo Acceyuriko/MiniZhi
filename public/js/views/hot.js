@@ -7,7 +7,11 @@ export const store = { items: [], updatedAt: 0 }
 function normalize(item) {
   const t = item?.target ?? {}
   if (t.type !== 'question') return null
-  const qid = String((String(t.url ?? '').match(/\/question\/(\d+)/) ?? [])[1] ?? '')
+  // 知乎热榜数据不稳定：有的条目 url 字段为空。id 走 url 提取优先，
+  // 缺失时回退 target.id（本地解析器已把超长数字保精度转成字符串）
+  const qid =
+    String((String(t.url ?? '').match(/\/question\/(\d+)/) ?? [])[1] ?? '') ||
+    String(t.id ?? '')
   if (!qid) return null
   return {
     qid,
