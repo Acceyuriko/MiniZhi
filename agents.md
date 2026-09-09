@@ -97,6 +97,13 @@
   （假 id 返回业务错 VideoIDErrorException 而非 403，通道 OK）。真实视频样本在
   本会话推荐流/热榜首屏均未出现（12 页推荐全 answer），待用户遇到带视频内容时
   实测 mp4/m3u8 播放。
+- **推荐流反馈（不感兴趣）实测**：POST /api/v4/zrec-feedback/uninterested，
+  表单 body scene_code=RECOMMEND&content_type={2=回答|1=文章}&content_token={内容
+  id}&uninterested_type={less_similar=该内容|author=该作者}&feed_deliver_type=
+  Normal&desktop=true；返回 {"success":true}（埋点式，假 token 也 success，无
+  法据响应分辨语义）；**无需 x-zst-81 头**（浏览器抓包带它，我们的签名引擎不带
+  也直通）；配合本地 localStorage 双层黑名单（内容/作者）+ 加载/续页过滤实现
+  「不喜欢该内容 / 不看该作者」（public/js/discard.js）。
 - **会话实测**：粘贴 cookie + 签名请求已打通（账号 Acceyuriko）。
 - 参考实现对拍工程在 `.scratch/zse-vec`（cargo path 依赖 rs-zse-sign），向量文件
   `.scratch/zse-vectors.txt`；探测脚本 `.scratch/probe*.mjs`，样本存
