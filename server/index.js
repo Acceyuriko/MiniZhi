@@ -129,14 +129,20 @@ async function handleApi(req, res, url) {
         return sendJson(res, 401, { error: '请先粘贴 cookie', hint: 'session' })
       }
       // 只放行 www.zhihu.com 且命中白名单前缀的请求
-      const pathname = target.startsWith('https://www.zhihu.com/')
+      // （注意：知乎分页 next 偶发 zhihu.com//api 双斜杠，先归一化）
+      let pathname = target.startsWith('https://www.zhihu.com/')
         ? target.slice('https://www.zhihu.com'.length)
         : null
+      if (pathname?.startsWith('//')) pathname = pathname.slice(1)
       const allowed = pathname && ZHIHU_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))
       if (!allowed) {
         return sendJson(res, 400, { error: '只允许代理知乎白名单 API' })
       }
-      const json = await zhihu.request(pathname, { method: body.method === 'POST' ? 'POST' : 'GET' })
+      const json = await zhihu.request(pathname, {
+        method: body.method === 'POST' ? 'POST' : 'GET',
+        body: body.body ?? null,
+        headers: body.headers ?? {},
+      })
       return sendJson(res, 200, json)
     }
 
@@ -183,12 +189,22 @@ const server = createServer((req, res) => {
     if (!target || !/^https?:\/\//.test(target)) return sendJson(res, 400, { error: 'media url 参数缺失' })
     fetchMedia(target, session.loadSession()?.cookie ?? null)
       .then((r) => {
-        res.writeHead(r.status, {
+        const headers = {
           'content-type': r.contentType ?? 'application/octet-stream',
-          'cache-control': r.fromCache ? 'private, max-age=3600' : 'private, max-age=60',
           'x-media-from-cache': String(r.fromCache),
-        })
-        res.end(r.body)
+        }
+        if (r.stream) {
+          res.writeHead(r.status, { ...headers, 'cache-control': 'no-store' })
+          r.stream.pipe(res)
+          r.stream.on('error', () => res.destroy())
+        } else {
+          res.writeHead(r.status, {
+            ...headers,
+            'cache-control': r.fromCache ? 'private, max-age=3600' : 'private, max-age=60',
+            'content-length': r.body.length,
+          })
+          res.end(r.body)
+        }
       })
       .catch((err) => {
         console.error('[minizhi] media proxy error:', err)

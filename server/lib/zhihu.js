@@ -144,14 +144,15 @@ function buildHeaders(extra = {}) {
 /**
  * 发起一次签名请求（GET 语义，POST 由调用方指定 body）。
  * @param {string} pathAndQuery 如 /api/v4/me 或 /api/v3/feed/topstory/hot-lists/total?limit=50
+ * @param {object} [opts] { method, body, headers } —— headers 为额外请求头
+ *   （如 play_info 需要 x-app-za/x-referer/content-type）
  */
-export function request(pathAndQuery, { method = 'GET', body = null } = {}) {
+export function request(pathAndQuery, { method = 'GET', body = null, headers = {} } = {}) {
   const url = BASE + pathAndQuery
   return limiter.run(async () => {
-    const headers = buildHeaders({ __url: url })
     const res = await fetch(url, {
       method,
-      headers,
+      headers: { ...buildHeaders({ __url: url }), ...headers },
       body,
       redirect: 'follow',
     })

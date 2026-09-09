@@ -94,9 +94,12 @@ function guessContentType(url) {
 
 /**
  * 拉取一个知乎媒体资源。
+ * 视频/流类（.mp4/.m3u8/.ts）→ 流式透传（不缓存，浏览器边下边放）；
+ * 图片等小资源 → 整块缓冲 + 内存 LRU。
  * @param {string} url 目标媒体 URL（限 ALLOWED_HOSTS）
  * @param {string|null} cookie 会话 cookie（视频流可能需要）
- * @returns {Promise<{status:number, contentType:string|null, body:Buffer, fromCache:boolean}>}
+ * @returns {Promise<{status:number, contentType:string|null, fromCache:boolean,
+ *                    body?:Buffer, stream?:import('node:stream').Readable}>}
  */
 export async function fetchMedia(url, cookie) {
   if (!isAllowedMediaUrl(url)) {
@@ -107,20 +110,23 @@ export async function fetchMedia(url, cookie) {
   if (cached) {
     return { status: 200, contentType: cached.contentType, body: cached.bytes, fromCache: true }
   }
+  const streaming = /\.(mp4|m3u8|ts)(\?|$)/i.test(url)
   const res = await fetch(url, {
     headers: {
       'user-agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
       referer: 'https://www.zhihu.com/',
       ...(cookie ? { cookie } : {}),
-      range: undefined, // 暂不做断点续传，整块拉取
     },
   })
   if (!res.ok) {
     return { status: res.status, contentType: null, body: Buffer.from('upstream ' + res.status), fromCache: false }
   }
-  const body = Buffer.from(await res.arrayBuffer())
   const contentType = res.headers.get('content-type') || guessContentType(url)
+  if (streaming) {
+    return { status: 200, contentType, stream: res.body, fromCache: false }
+  }
+  const body = Buffer.from(await res.arrayBuffer())
   cache.put(key, body, contentType)
   return { status: 200, contentType, body, fromCache: false }
 }

@@ -1,0 +1,163 @@
+/* MiniZhi 样式：桌面单栏阅读，亮/暗跟随系统 */
+:root {
+  --bg: #f6f6f7;
+  --fg: #1b1b1f;
+  --muted: #8a8a93;
+  --card: #ffffff;
+  --line: #e6e6ea;
+  --accent: #0084ff;
+  --danger: #d33a3a;
+  --ok: #2e8b57;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101014;
+    --fg: #e7e7ea;
+    --muted: #9a9aa3;
+    --card: #1a1a1f;
+    --line: #2c2c33;
+    --accent: #4da3ff;
+    --danger: #ff6b6b;
+    --ok: #6fcf97;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; }
+button { font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.ghost { background: transparent; border-color: transparent; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ── 顶栏 ─────────────────────────────── */
+.topbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.topbar-inner {
+  max-width: 1040px; margin: 0 auto; padding: 8px 16px;
+  display: flex; align-items: center; gap: 16px;
+}
+.brand { font-size: 19px; font-weight: 700; color: var(--fg); }
+.tabs { display: flex; gap: 4px; }
+.tabs a { padding: 4px 14px; border-radius: 16px; color: var(--muted); font-size: 15px; }
+.tabs a.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); font-weight: 600; }
+.topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.who { color: var(--muted); font-size: 13px; cursor: pointer; }
+
+/* ── 横幅/提示 ─────────────────────────── */
+.banner {
+  background: var(--danger); color: #fff; text-align: center; padding: 8px 16px; font-size: 14px;
+}
+.banner button { border-color: #fff; color: #fff; background: transparent; margin-left: 8px; }
+.view { max-width: 1040px; margin: 0 auto; padding: 16px; }
+.toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  background: var(--fg); color: var(--bg); padding: 8px 18px; border-radius: 20px;
+  font-size: 14px; z-index: 60;
+}
+
+/* ── 通用卡片 ─────────────────────────── */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; }
+.card + .card { margin-top: 14px; }
+.answer-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+  background: var(--line); flex: none;
+}
+.author-name { font-weight: 600; font-size: 15px; }
+.author-headline { color: var(--muted); font-size: 12px; }
+.answer-question { font-size: 14px; margin: 4px 0 10px; }
+.answer-question .muted { font-size: 13px; }
+.content-body { overflow-wrap: anywhere; }
+.content-body p { margin: 10px 0; }
+.content-body figure { margin: 12px 0; text-align: center; }
+.content-body figcaption { color: var(--muted); font-size: 13px; }
+.content-body img { border-radius: 8px; }
+.content-body video { width: 100%; border-radius: 8px; background: #000; }
+.content-body h1, .content-body h2, .content-body h3 { margin: 18px 0 8px; }
+.content-body blockquote {
+  margin: 10px 0; padding: 2px 14px; border-left: 3px solid var(--line);
+  color: var(--muted);
+}
+.content-body pre, .content-body code {
+  font-family: ui-monospace, Consolas, monospace; font-size: .92em;
+  background: color-mix(in srgb, var(--fg) 6%, transparent); border-radius: 6px;
+}
+.content-body pre { padding: 10px 12px; overflow-x: auto; }
+.content-body code { padding: 1px 5px; }
+.content-body table { border-collapse: collapse; width: 100%; }
+.content-body th, .content-body td { border: 1px solid var(--line); padding: 6px 10px; }
+.answer-meta { margin-top: 12px; color: var(--muted); font-size: 13px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.answer-meta .qlink { margin-left: auto; }
+
+/* ── 推荐流（单条大卡片） ─────────────── */
+.navbar {
+  position: sticky; bottom: 16px; z-index: 15;
+  display: flex; justify-content: center; gap: 12px; margin: 18px auto 8px;
+}
+.navbar button { padding: 10px 26px; font-size: 16px; box-shadow: 0 4px 14px rgb(0 0 0 / .12); }
+.reader-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+.item-kind { display: inline-block; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; margin-right: 8px; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 60px 0; }
+.loading { text-align: center; color: var(--muted); padding: 40px 0; }
+.spin::before {
+  content: ''; display: inline-block; width: 18px; height: 18px; margin-right: 8px;
+  border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%;
+  vertical-align: -4px; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 热榜列表 ─────────────────────────── */
+.hot-list { list-style: none; margin: 0; padding: 0; }
+.hot-list li { display: flex; gap: 14px; padding: 13px 8px; border-bottom: 1px solid var(--line); cursor: pointer; align-items: baseline; }
+.hot-list li:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.hot-rank { font-size: 20px; font-weight: 700; font-style: italic; width: 34px; flex: none; text-align: center; }
+.hot-rank.top3 { color: var(--accent); }
+.hot-title { flex: 1; font-size: 15px; }
+.hot-title small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
+.hot-heat { color: var(--muted); font-size: 12px; flex: none; }
+
+/* ── 问题页 ───────────────────────────── */
+.question-head { margin-bottom: 4px; }
+.question-head h1 { font-size: 21px; margin: 0 0 6px; line-height: 1.45; }
+.sort-tabs { display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 18px; padding: 2px; margin: 6px 0 12px; }
+.sort-tabs button { border: none; background: transparent; border-radius: 16px; padding: 4px 16px; font-size: 14px; }
+.sort-tabs button.active { background: var(--accent); color: #fff; }
+.back-link { color: var(--muted); font-size: 14px; display: inline-block; margin-bottom: 8px; }
+
+/* ── 评论 ─────────────────────────────── */
+dialog { border: none; border-radius: 14px; background: var(--card); color: var(--fg); width: min(720px, 94vw); max-height: 82vh; padding: 0; }
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+.comments-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.comments-head h2 { margin: 0; font-size: 17px; }
+.comments-body { padding: 8px 20px 20px; overflow: auto; max-height: 70vh; }
+.comment { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.comment .c-author { font-weight: 600; font-size: 13px; color: var(--muted); margin-right: 6px; }
+.comment .c-time { color: var(--muted); font-size: 12px; }
+.comment .c-body { margin: 4px 0; }
+.comment .c-actions { color: var(--muted); font-size: 12px; display: flex; gap: 12px; }
+.comment .c-children { margin: 6px 0 0 18px; padding-left: 12px; border-left: 2px solid var(--line); }
+.loadmore { width: 100%; margin: 8px 0; }
+
+/* ── 设置对话框 ───────────────────────── */
+.settings-form { padding: 20px 24px; }
+.settings-form h2 { margin: 0 0 8px; }
+.hint { color: var(--muted); font-size: 13px; }
+#cookieInput { width: 100%; min-height: 130px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; margin: 8px 0; }
+
+@media (max-width: 720px) {
+  .view, .topbar-inner { padding-left: 10px; padding-right: 10px; }
+  .card { padding: 14px; }
+}
