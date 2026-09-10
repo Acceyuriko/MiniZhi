@@ -48,6 +48,9 @@ const ZHIHU_ALLOWED_PREFIXES = [
   '/api/v4/video/play_info',
   '/api/v4/zrec-feedback/',
   '/api/v4/members/',
+  '/api/v4/read_history/',
+  '/lastread/', // 已读上报：multipart items=[["answer","<id>","read"|"touch"]]
+  '/unify-consumption/', // 浏览历史（读回验证用）
 ]
 
 function sendJson(res, status, obj) {

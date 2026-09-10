@@ -5,6 +5,7 @@ import { esc, fmtTime, fillContent } from '../render.js'
 import { playVideoIn } from '../video.js'
 import { openComments } from '../comments.js'
 import * as discard from '../discard.js'
+import * as report from '../readreport.js'
 
 // 会话级状态：切 Tab / 切路由回来不丢
 export const store = {
@@ -126,6 +127,18 @@ function scrollToCard(el) {
   })
 }
 
+const READ_DWELL_MS = 4000
+let readTimer = null
+
+/** 当前展示的条目：立即报曝光，停留够久再报已读（切走就不算读过） */
+function trackCurrent(it) {
+  clearTimeout(readTimer)
+  report.noteExposure(it)
+  readTimer = setTimeout(() => {
+    if (store.items[store.index]?.id === it.id) report.noteRead(it)
+  }, READ_DWELL_MS)
+}
+
 /** 不喜欢该内容 / 不看该作者：云端反馈（尽力）+ 本地黑名单 + 立即移除当前条目 */
 async function handleDiscard(el, onNav, act, btn) {
   const it = store.items[store.index]
@@ -187,6 +200,9 @@ function renderItemView(el, onNav, anchor = false) {
     meta.appendChild(more)
   }
   el.appendChild(meta)
+
+  // 已读上报：当前这条算曝光；停留够久再算「已读」（减少知乎重复推同一条）
+  trackCurrent(it)
 
   // 正文容器
   const wrap = document.createElement('div')

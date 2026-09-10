@@ -4,6 +4,7 @@ import { esc, fillContent } from '../render.js'
 import { answerCard, navBar, authorBlock } from '../ui.js'
 import { openComments } from '../comments.js'
 import { store as recStore } from './recommend.js'
+import * as report from '../readreport.js'
 
 export function findCachedEntity(kind, id) {
   return recStore.items.find((it) => {
@@ -43,6 +44,9 @@ export function mount(container, { kind, id }) {
   h.textContent = it.title || (kind === 'article' ? '文章' : '想法')
   head.appendChild(h)
   el.appendChild(head)
+
+  // 打开详情 = 读过这条（照网页版：打开内容时上报）
+  report.noteRead({ machineType: kind, id: String(id) })
 
   if (kind === 'article') {
     const card = answerCard(it, {

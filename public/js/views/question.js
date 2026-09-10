@@ -4,6 +4,7 @@ import { answerCard, navBar } from '../ui.js'
 import { fmtTime, fillContent } from '../render.js'
 import { openComments } from '../comments.js'
 import * as discard from '../discard.js'
+import * as report from '../readreport.js'
 
 export const store = {
   qid: null,
@@ -81,6 +82,18 @@ function scrollToCard(el) {
     const card = el.querySelector('.card')
     card?.scrollIntoView({ block: 'start', behavior: 'smooth' })
   })
+}
+
+const READ_DWELL_MS = 4000
+let readTimer = null
+
+/** 当前展示的回答：立即报曝光，停留够久再报已读（切走就不算读过） */
+function trackCurrent(it) {
+  clearTimeout(readTimer)
+  report.noteExposure(it)
+  readTimer = setTimeout(() => {
+    if (store.items[store.index]?.id === it.id) report.noteRead(it)
+  }, READ_DWELL_MS)
 }
 
 /** 不喜欢该内容 / 不看该作者：与推荐流同一套本地黑名单 + 云端反馈 */
@@ -208,6 +221,9 @@ function render(el) {
   })
   el.appendChild(card)
 
+  // 已读上报：当前这条算曝光，停留够久再算已读
+  trackCurrent(it)
+
   const nb = navBar({
     prevText: '◀ 上一个回答',
     nextText: '下一个回答 ▶',
@@ -291,6 +307,8 @@ export function mount(container, { qid, sort = 'default', from = null }) {
       store.question = null
       store.index = 0
       store.note = ''
+      // 打开问题页 = 读过这个问题（照网页版：read_history/add content_type=question）
+      report.noteRead({ machineType: 'question', id: String(qid) })
       view.refresh()
     },
   }
