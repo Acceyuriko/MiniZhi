@@ -55,6 +55,12 @@
   （用户屏幕 1920 宽，宽度留配置可调）；亮/暗主题跟随系统。
 - **仓库**：MiniZhi 为私有仓库；`zhihu-plus-plus/`（参考项目 clone）与运行数据
   目录均已 gitignore；提交用 Conventional Commits，不推送。
+- **服务常驻 / 开机自启**：`scripts/minizhi-serve.cmd` 是守护循环
+  （cd 到项目 → `node server/index.js` → 退出后隔 3 秒重启，日志追加
+  `data/server.log`）；`%APPDATA%\Microsoft\Windows\Start Menu\Programs\
+  Startup\MiniZhi.vbs` 以隐藏窗口调用它 → 开机自启 + 崩溃自愈（实测杀进程后
+  3 秒自动恢复）。**别再拿 agent 会话的后台任务（background job）当常驻服务**：
+  会话一断进程即被回收（曾导致"服务挂了"）。
 
 ## 实测经验（2026 年实弹验证，务必遵守）
 

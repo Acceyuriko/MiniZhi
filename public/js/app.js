@@ -123,13 +123,18 @@ async function navigate() {
   }
 }
 
-// ── 快捷键：←/→ 上下条（打字与弹窗时忽略） ──────────
+// ── 快捷键：←/→ 或 Shift+P/Shift+N 切换上下条（打字与弹窗时忽略） ──
 function keydown(e) {
-  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
   const tag = (e.target.tagName || '').toLowerCase()
   if (tag === 'textarea' || tag === 'input' || tag === 'select') return
   if (settingsEl().open) return
-  const d = e.key === 'ArrowRight' ? 1 : -1
+  const k = (e.key || '').toLowerCase()
+  let d = 0
+  if (e.key === 'ArrowRight') d = 1
+  else if (e.key === 'ArrowLeft') d = -1
+  else if (e.shiftKey && k === 'n') d = 1
+  else if (e.shiftKey && k === 'p') d = -1
+  if (!d) return
   if ((currentRoute.name === 'recommend' || currentRoute.name === 'question') && currentView) {
     e.preventDefault()
     currentView.step(d)
