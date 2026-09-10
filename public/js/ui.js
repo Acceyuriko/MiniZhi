@@ -15,23 +15,45 @@ export function authorBlock(author) {
   return box
 }
 
+/** 推荐流反馈按钮组（不喜欢该内容 / 不看该作者），供卡片头部使用 */
+export function feedbackRow(onDiscard, a) {
+  const fb = document.createElement('div')
+  fb.className = 'card-feedback'
+  for (const [act, label] of [
+    ['content', '不喜欢该内容'],
+    ['author', '不看该作者'],
+  ]) {
+    const b = document.createElement('button')
+    b.className = 'ghost'
+    b.textContent = label
+    b.addEventListener('click', () => onDiscard(act, a, b))
+    fb.appendChild(b)
+  }
+  return fb
+}
+
 /**
  * 渲染一条“回答式”卡片（回答 / 文章 / 想法共用）。
  * @param {{kind:string, title?:string, content:string, excerpt?:string, author?:object,
  *          voteupCount?:number, commentCount?:number, createdTime?:number|string,
  *          question?:object, id:string, url?:string, answerId?:string}} a 已归一化的实体
- * @param {{onComment?:fn(id), onQuestion?:fn(qid, aid)}} h 行为回调
+ * @param {{onComment?:fn(id), onQuestion?:fn(qid, aid), onDiscard?:fn(act, a, btn)}} h 行为回调
  */
 export function answerCard(a, h = {}) {
   const card = document.createElement('article')
   card.className = 'card'
 
-  const head = document.createElement('div')
+  // 顶行：类型标签 +（推荐流）反馈按钮 —— 一眼营销文不用滚到底就能毙掉
+  const top = document.createElement('div')
+  top.className = 'card-top'
   const kindTag = document.createElement('span')
   kindTag.className = 'item-kind'
   kindTag.textContent = a.kind ?? '回答'
-  head.appendChild(kindTag)
+  top.appendChild(kindTag)
+  if (h.onDiscard) top.appendChild(feedbackRow(h.onDiscard, a))
+  card.appendChild(top)
 
+  const head = document.createElement('div')
   if (a.question?.title) {
     const q = document.createElement('div')
     q.className = 'answer-question'
@@ -93,22 +115,6 @@ export function answerCard(a, h = {}) {
     ext.textContent = '在知乎打开 ↗'
     ext.className = 'qlink'
     meta.appendChild(ext)
-  }
-  // 推荐流专属：不喜欢该内容 / 不看该作者（无回调则不渲染）
-  if (h.onDiscard) {
-    const fb = document.createElement('div')
-    fb.className = 'card-feedback'
-    for (const [act, label] of [
-      ['content', '不喜欢该内容'],
-      ['author', '不看该作者'],
-    ]) {
-      const b = document.createElement('button')
-      b.className = 'ghost'
-      b.textContent = label
-      b.addEventListener('click', () => h.onDiscard(act, a, b))
-      fb.appendChild(b)
-    }
-    meta.appendChild(fb)
   }
   card.appendChild(meta)
   return card

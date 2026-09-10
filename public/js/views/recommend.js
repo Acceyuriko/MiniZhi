@@ -1,6 +1,6 @@
 // recommend.js —— 推荐流视图：单条大卡片、会话级记忆、尾部自动续页
 import { api, SessionError } from '../api.js'
-import { answerCard, navBar, authorBlock } from '../ui.js'
+import { answerCard, navBar, authorBlock, feedbackRow } from '../ui.js'
 import { esc, fmtTime, fillContent } from '../render.js'
 import { playVideoIn } from '../video.js'
 import { openComments } from '../comments.js'
@@ -204,7 +204,16 @@ function renderItemView(el, onNav, anchor = false) {
   // 正文容器
   const wrap = document.createElement('div')
   if (it.externalOnly) {
-    // 视频等壳：作者 + 外链
+    // 视频等壳：与普通卡片同壳，顶行仍放反馈按钮
+    wrap.className = 'card'
+    const top = document.createElement('div')
+    top.className = 'card-top'
+    const tag = document.createElement('span')
+    tag.className = 'item-kind'
+    tag.textContent = it.kind ?? '视频'
+    top.appendChild(tag)
+    top.appendChild(feedbackRow((act, a, btn) => handleDiscard(el, onNav, act, btn), it))
+    wrap.appendChild(top)
     if (it.author) wrap.appendChild(authorBlock(it.author))
     const p = document.createElement('p')
     p.className = 'muted'
@@ -218,23 +227,6 @@ function renderItemView(el, onNav, anchor = false) {
       a.textContent = '在知乎打开 ↗'
       wrap.appendChild(a)
     }
-    const card2 = document.createElement('div')
-    card2.className = 'card'
-    card2.style.cssText = 'padding:10px 16px;'
-    const fb = document.createElement('div')
-    fb.className = 'card-feedback'
-    for (const [act, label] of [
-      ['content', '不喜欢该内容'],
-      ['author', '不看该作者'],
-    ]) {
-      const b = document.createElement('button')
-      b.className = 'btn btn-ghost btn-sm'
-      b.textContent = label
-      b.addEventListener('click', () => handleDiscard(el, onNav, act, b))
-      fb.appendChild(b)
-    }
-    card2.appendChild(fb)
-    wrap.appendChild(card2)
   } else {
     const onQuestion = (qid, aid) => {
       if (!qid) {
