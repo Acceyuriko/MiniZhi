@@ -18,12 +18,12 @@ export function mount(container, { kind, id }) {
   const el = document.createElement('div')
   container.appendChild(el)
 
-  const back = document.createElement('a')
+  const back = document.createElement('button')
+  back.type = 'button'
   back.className = 'back-link'
-  back.href = '#'
-  back.textContent = '‹ 返回'
-  back.addEventListener('click', (ev) => {
-    ev.preventDefault()
+  back.textContent = '返回'
+  back.setAttribute('aria-label', '返回上一页')
+  back.addEventListener('click', () => {
     history.back()
   })
   el.appendChild(back)
@@ -50,7 +50,6 @@ export function mount(container, { kind, id }) {
         const aid = a.answerId || a.id
         if (aid) openComments('article', aid, cardEl, btn)
       },
-      onQuestion: () => {},
     })
     el.appendChild(card)
     const nb = navBar({ onPrev: () => history.back(), onNext: () => window.scrollTo({ top: 0 }) })

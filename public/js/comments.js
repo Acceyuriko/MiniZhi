@@ -46,7 +46,10 @@ export function openComments(type, id, anchor, btn) {
   const list = document.createElement('div')
   box.appendChild(list)
   anchor.after(box)
-  if (btn) btn.textContent = openLabel
+  if (btn) {
+    btn.textContent = openLabel
+    btn.setAttribute('aria-expanded', 'true')
+  }
 
   open = { key, type, id, box, list, btn }
   loadRoot(true).catch(errOut)
@@ -55,7 +58,10 @@ export function openComments(type, id, anchor, btn) {
 export function closeComments() {
   if (!open) return
   open.box.remove()
-  if (open.btn) open.btn.textContent = '💬 评论'
+  if (open.btn) {
+    open.btn.textContent = '💬 评论'
+    open.btn.setAttribute('aria-expanded', 'false')
+  }
   open = null
 }
 
@@ -102,10 +108,11 @@ function commentEl(c, { child = false } = {}) {
     const btn = document.createElement('button')
     btn.className = 'btn btn-ghost btn-sm'
     btn.textContent = `展开 ${c.child_comment_count} 条回复`
+    btn.setAttribute('aria-expanded', 'false')
     const updateLabel = () => {
-      btn.textContent = box.classList.contains('hidden')
-        ? `展开 ${c.child_comment_count} 条回复`
-        : '收起回复'
+      const collapsed = box.classList.contains('hidden')
+      btn.textContent = collapsed ? `展开 ${c.child_comment_count} 条回复` : '收起回复'
+      btn.setAttribute('aria-expanded', String(!collapsed))
     }
     btn.addEventListener('click', async () => {
       const willOpen = box.classList.contains('hidden')

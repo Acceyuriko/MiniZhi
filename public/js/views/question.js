@@ -79,13 +79,13 @@ function render(el) {
   el.innerHTML = ''
   const it = store.items[store.index]
 
-  // 头部：返回 + 问题标题 + 计数
-  const back = document.createElement('a')
+  // 头部：返回（按钮：动作而非导航）+ 问题标题 + 计数
+  const back = document.createElement('button')
+  back.type = 'button'
   back.className = 'back-link'
-  back.textContent = '‹ 返回'
-  back.href = '#'
-  back.addEventListener('click', (ev) => {
-    ev.preventDefault()
+  back.textContent = '返回'
+  back.setAttribute('aria-label', '返回上一页')
+  back.addEventListener('click', () => {
     history.back()
   })
   el.appendChild(back)
@@ -158,7 +158,6 @@ function render(el) {
     onComment: (a, btn, cardEl) => {
       if (a.id) openComments('answer', a.id, cardEl, btn)
     },
-    onQuestion: () => {}, // 已处于问题页
   })
   el.appendChild(card)
 

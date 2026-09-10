@@ -58,13 +58,18 @@ export function answerCard(a, h = {}) {
     const q = document.createElement('div')
     q.className = 'answer-question'
     const link = document.createElement('a')
-    link.href = '#'
     link.textContent = a.question.title
     link.style.fontWeight = '600'
-    link.addEventListener('click', (ev) => {
-      ev.preventDefault()
-      h.onQuestion?.(a.question.id, a.answerId || a.id)
-    })
+    // 真链接：可键盘聚焦 / 中键新开 / 复制地址（hash 路由由 app 接管）
+    if (a.question.id) {
+      link.href = `#question/${a.question.id}` + (a.answerId || a.id ? `?from=${a.answerId || a.id}` : '')
+    } else if (a.url) {
+      link.href = a.url
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+    } else {
+      link.href = '#recommend'
+    }
     q.appendChild(link)
     if (a.question.answerCount) {
       const m = document.createElement('span')
@@ -105,6 +110,7 @@ export function answerCard(a, h = {}) {
   const btn = document.createElement('button')
   btn.className = 'ghost'
   btn.textContent = '💬 评论'
+  btn.setAttribute('aria-expanded', 'false')
   btn.addEventListener('click', () => h.onComment?.(a, btn, card))
   meta.appendChild(btn)
   if (a.url && !a.question) {

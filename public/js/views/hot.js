@@ -45,8 +45,13 @@ export function mount(container) {
 
     const ul = document.createElement('ul')
     ul.className = 'hot-list'
+    ul.setAttribute('aria-label', '知乎热榜')
     store.items.forEach((it, i) => {
       const li = document.createElement('li')
+      // 整行是一条 <a>（可键盘聚焦、可中键新开、可复制链接）
+      const row = document.createElement(it.qid ? 'a' : 'span')
+      row.className = 'hot-row'
+      if (it.qid) row.href = '#question/' + it.qid
       const rank = document.createElement('span')
       rank.className = 'hot-rank' + (i < 3 ? ' top3' : '')
       rank.textContent = String(i + 1).padStart(2, '0')
@@ -59,17 +64,15 @@ export function mount(container) {
       if (it.followerCount != null) bits.push(`${it.followerCount} 关注`)
       sub.textContent = bits.join(' · ')
       title.appendChild(sub)
-      li.appendChild(rank)
-      li.appendChild(title)
+      row.appendChild(rank)
+      row.appendChild(title)
       if (it.heat != null) {
         const heat = document.createElement('span')
         heat.className = 'hot-heat'
         heat.textContent = String(it.heat)
-        li.appendChild(heat)
+        row.appendChild(heat)
       }
-      li.addEventListener('click', () => {
-        location.hash = '#question/' + it.qid
-      })
+      li.appendChild(row)
       ul.appendChild(li)
     })
     el.appendChild(ul)

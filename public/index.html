@@ -19,12 +19,12 @@
       </nav>
       <div class="topbar-right">
         <button id="btnRefresh" class="btn btn-ghost btn-sm" title="刷新当前列表">↻ 刷新</button>
-        <span id="who" class="who" title="点击设置登录">…</span>
+        <button id="who" class="who" type="button" title="设置登录 / 查看屏蔽" aria-label="账号与设置">…</button>
       </div>
     </div>
   </header>
 
-  <div id="banner" class="banner hidden"></div>
+  <div id="banner" class="banner hidden" role="status" aria-live="polite"></div>
 
   <main id="view" class="view"></main>
 
@@ -47,7 +47,7 @@
     </form>
   </dialog>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>

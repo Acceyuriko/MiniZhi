@@ -66,7 +66,7 @@ export function renderContent(html, { onVideo } = {}) {
     const holder = document.createElement('div')
     holder.className = 'zvideo-holder'
     holder.style.cssText =
-      'position:relative;aspect-ratio:16/9;max-width:100%;border-radius:10px;overflow:hidden;background:#000;cursor:pointer;display:flex;align-items:center;justify-content:center;'
+      'position:relative;aspect-ratio:16/9;max-width:100%;border-radius:10px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;'
     if (poster) {
       const im = document.createElement('img')
       im.src = poster
@@ -77,8 +77,9 @@ export function renderContent(html, { onVideo } = {}) {
     const play = document.createElement('button')
     play.textContent = '▶'
     play.className = 'zvideo-play'
+    play.setAttribute('aria-label', '播放视频')
     play.style.cssText =
-      'position:relative;font-size:40px;width:76px;height:76px;border-radius:50%;border:2px solid rgba(255,255,255,.9);color:#fff;background:rgba(0,0,0,.35);'
+      'position:relative;font-size:40px;width:76px;height:76px;border-radius:50%;border:2px solid rgba(255,255,255,.9);color:#fff;background:rgba(0,0,0,.35);cursor:pointer;'
     play.addEventListener('click', (ev) => {
       ev.stopPropagation()
       if (onVideo) onVideo(videoId, holder)

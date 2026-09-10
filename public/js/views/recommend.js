@@ -228,14 +228,6 @@ function renderItemView(el, onNav, anchor = false) {
       wrap.appendChild(a)
     }
   } else {
-    const onQuestion = (qid, aid) => {
-      if (!qid) {
-        window.open(it.url, '_blank')
-        return
-      }
-      location.hash = `#question/${qid}` + (aid ? `?from=${aid}` : '')
-      onNav?.()
-    }
     const card = answerCard(it, {
       onComment: (a, btn, cardEl) => {
         const mt = a.machineType ?? 'answer'
@@ -249,7 +241,6 @@ function renderItemView(el, onNav, anchor = false) {
         else openComments('answer', aid, cardEl, btn)
       },
       onDiscard: (act, a, btn) => handleDiscard(el, onNav, act, btn),
-      onQuestion,
     })
     wrap.appendChild(card)
   }
