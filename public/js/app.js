@@ -171,17 +171,19 @@ function initSettings() {
     }
   })
 
-  // 屏蔽管理：清空「不喜欢/不看作者」本地黑名单
+  // 本次会话内点过屏蔽的条目（不落盘：真正生效的是知乎侧反馈）
   const refreshDiscardInfo = () => {
     const c = discard.counts()
-    document.getElementById('discardInfo').textContent =
-      `本地屏蔽：${c.contents} 条内容 · ${c.authors} 位作者`
+    document.getElementById('discardInfo').textContent = c.contents + c.authors > 0
+      ? `本次会话已忽略 ${c.contents} 条 · ${c.authors} 位作者`
+      : '屏蔽已直接反馈给知乎，本地不保存'
   }
   document.getElementById('discardClear').addEventListener('click', () => {
     discard.clearAll()
     refreshDiscardInfo()
-    toast('已清空屏蔽（推荐流刷新后生效）')
+    toast('已取消本次会话内的隐藏')
   })
+  document.getElementById('who').addEventListener('click', refreshDiscardInfo)
   refreshDiscardInfo()
 }
 

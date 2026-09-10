@@ -1,22 +1,22 @@
-// discard.js —— 推荐流屏蔽：本地黑名单（localStorage 持久化）+ 知乎云端反馈
-// 「不喜欢该内容」= 本地永久忽略该条 + 云端 uninterested_type=less_similar
-// 「不看该作者」   = 本地永久屏蔽该作者所有内容 + 云端 uninterested_type=author
+// discard.js —— 「不喜欢该内容 / 不看该作者」：以知乎 API 反馈为准
+// 屏蔽状态不存在本地（不落盘、不持久化）：点一次就上报知乎，
+//   less_similar = 少推这类内容，author = 少推该作者；
+// 本模块只保留*会话内存*记录，用于点完之后立刻隐藏该条/该作者的后续条目，
+// 刷新页面即清空，之后完全以知乎服务端返回为准。
 // 云端接口（用户抓包实证，无需 x-zst-81，我们的签名可直接过）：
 //   POST /api/v4/zrec-feedback/uninterested  表单 body：
 //   scene_code=RECOMMEND&content_type={2回答|1文章}&content_token={内容id}
 //   &uninterested_type={less_similar|author}&feed_deliver_type=Normal&desktop=true
 import { api } from './api.js'
 
-const K_CONTENT = 'mz.discard.content.v1'
-const K_AUTHOR = 'mz.discard.author.v1'
-
-const contents = new Set(JSON.parse(localStorage.getItem(K_CONTENT) ?? '[]'))
-const authors = new Set(JSON.parse(localStorage.getItem(K_AUTHOR) ?? '[]'))
-
-function persist() {
-  localStorage.setItem(K_CONTENT, JSON.stringify([...contents]))
-  localStorage.setItem(K_AUTHOR, JSON.stringify([...authors]))
+// 清理早期版本写入的本地持久化黑名单（现已不使用）
+for (const k of ['mz.discard.content.v1', 'mz.discard.author.v1']) {
+  try { localStorage.removeItem(k) } catch { /* 忽略 */ }
 }
+
+// 会话内存（不持久化）：本次页面会话内已点过屏蔽的内容/作者
+const contents = new Set()
+const authors = new Set()
 
 const keyOf = (kind, id) => `${kind}:${id}`
 const authorKeyOf = (author) => {
@@ -37,14 +37,10 @@ export function filterList(items) {
 
 export function blockContent(item) {
   contents.add(keyOf(item.machineType ?? item.kind ?? '?', String(item.id ?? '')))
-  persist()
 }
 export function blockAuthor(item) {
   const k = authorKeyOf(item.author)
-  if (k) {
-    authors.add(k)
-    persist()
-  }
+  if (k) authors.add(k)
   return k
 }
 
@@ -74,7 +70,7 @@ export async function reportUninterested(item, type) {
   }
 }
 
-/** 一次完整的屏蔽：云端上报（尽力）→ 本地黑名单；返回上报结果供提示 */
+/** 一次屏蔽：上报知乎（主）+ 记入会话内存（辅，用于立刻隐藏） */
 export async function applyDiscard(item, mode) {
   const res = await reportUninterested(item, mode === 'author' ? 'author' : 'less_similar')
   if (mode === 'author') blockAuthor(item)
@@ -82,12 +78,12 @@ export async function applyDiscard(item, mode) {
   return res
 }
 
-/** 屏蔽后的提示文案（云端失败/类型不支持时补充说明） */
+/** 屏蔽后的提示文案 */
 export function discardToast(res, mode) {
   let extra = ''
-  if (res?.err) extra = '（云端反馈失败，仅本地屏蔽）'
-  else if (res && !res.sent) extra = '（该类型暂不支持云端反馈，仅本地屏蔽）'
-  return (mode === 'author' ? '已屏蔽该作者' : '已忽略该内容') + extra
+  if (res?.err) extra = '（反馈失败，请检查登录）'
+  else if (res && !res.sent) extra = '（该类型知乎不支持反馈）'
+  return (mode === 'author' ? '已反馈：少推该作者' : '已反馈：少推这类内容') + extra
 }
 
 export function counts() {
@@ -96,5 +92,4 @@ export function counts() {
 export function clearAll() {
   contents.clear()
   authors.clear()
-  persist()
 }

@@ -108,8 +108,11 @@
   id}&uninterested_type={less_similar=该内容|author=该作者}&feed_deliver_type=
   Normal&desktop=true；返回 {"success":true}（埋点式，假 token 也 success，无
   法据响应分辨语义）；**无需 x-zst-81 头**（浏览器抓包带它，我们的签名引擎不带
-  也直通）；配合本地 localStorage 双层黑名单（内容/作者）+ 加载/续页过滤实现
-  「不喜欢该内容 / 不看该作者」（public/js/discard.js）。
+  也直通）；实现上**屏蔽以知乎 API 为准、本地不落盘**：点一次即上报知乎，
+  本模块只在会话内存里记一份已忽略的内容/作者，用于立刻隐藏与本次会话过滤，
+  刷新页面即清空（public/js/discard.js）。推荐流与问题页共用同一套
+  applyDiscard/过滤逻辑（问题页需要 service 端 normalizeAnswer 带 author.id，
+  否则跨页作者 key 对不上）。
 - **会话实测**：粘贴 cookie + 签名请求已打通（账号 Acceyuriko）。
 - 参考实现对拍工程在 `.scratch/zse-vec`（cargo path 依赖 rs-zse-sign），向量文件
   `.scratch/zse-vectors.txt`；探测脚本 `.scratch/probe*.mjs`，样本存
