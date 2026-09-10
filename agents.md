@@ -97,6 +97,19 @@
 - **字段稳定性坑（2026-09 实测）**：知乎接口的 `url` 字段**时有时无**（热榜条目
   的 target.url、根评论的 url 都遇到过缺失/变体）→ 前端一律「url 正则提取 ||
   id 兜底」，id 靠 parseZhihuJson 保精度字符串化后可直接用。
+- **正文图片两个坑（2026-09 实测，问题页 SSR 复现）**：
+  1. **懒加载占位**：`src` 是透明 `data:image/svg+xml`（只为按原图尺寸撑高度，
+     实测撑出 903×2690 的大片空白），真地址在 `data-actualsrc` / `data-original`。
+     取图优先级：src（非 data: 占位）→ data-actualsrc → data-original → data-src
+     → data-original-src；一个都没有就**删掉该 img**，别留透明块。
+     图片域名除 pic1-4 还有 **picx / pica / picb / picc**，正则漏了会直连（可能被
+     防盗链拦）→ 一律按 `*.zhimg.com` 交给本地 /media 代理（代理白名单兜底）。
+  2. **SSR 同一图位有两个 `<img>`**：`<noscript>` 里的 no-JS 回退图 + 懒加载占位图。
+     `DOMParser`（脚本关闭）会把 noscript 子节点解析成**真元素**，塞回带脚本文档后
+     noscript 又变 display:none → 必须先**展开 noscript**（子节点搬到父节点再删
+     noscript），再按 URL 里的 `v2-<32hex>` token 去重，否则同一张图显示两遍。
+     实测：12 张图的回答去重后 8 张，滚动后全部经代理正常加载（图片代理不受 API
+     的 1s 串行限速；`loading="lazy"` 只在滚到视口才请求，属正常现象）。
 - **play_info 通道已验证**：POST /api/v4/video/play_info?r={videoId} + JSON body
   {content_id,content_type_str,video_id,scene_code:'answer_detail_web',
   is_only_video:true} + 头 x-app-za:OS=webplayer（照 plus-plus）→ 知乎正常受理
