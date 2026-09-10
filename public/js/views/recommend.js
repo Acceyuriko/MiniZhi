@@ -127,7 +127,7 @@ function scrollToCard(el) {
   })
 }
 
-const READ_DWELL_MS = 4000
+const READ_DWELL_MS = 15000
 let readTimer = null
 
 /** 当前展示的条目：立即报曝光，停留够久再报已读（切走就不算读过） */
