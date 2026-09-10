@@ -1,8 +1,9 @@
 // question.js —— 问题页视图：标题 + 排序切换 + 单回答阅读 + 定位来源回答
-import { api } from '../api.js'
+import { api, SessionError } from '../api.js'
 import { answerCard, navBar } from '../ui.js'
 import { fmtTime, fillContent } from '../render.js'
 import { openComments } from '../comments.js'
+import * as discard from '../discard.js'
 
 export const store = {
   qid: null,
@@ -21,7 +22,7 @@ async function loadFirstPage(qid, sort) {
   try {
     const page = await api.questionPage(qid, { order: sort, limit: 5 })
     store.question = page.question
-    store.items = page.answers ?? []
+    store.items = discard.filterList(page.answers ?? [])
     store.nextUrl = page.nextUrl
     store.index = 0
     if (store.items.length === 0) store.note = '暂无回答'
@@ -34,10 +35,17 @@ async function appendMore() {
   if (!store.nextUrl || store.loading) return false
   store.loading = true
   try {
-    const page = await api.questionNext(store.nextUrl, store.sort)
-    store.items.push(...(page.answers ?? []))
-    store.nextUrl = page.nextUrl
-    return (page.answers ?? []).length > 0
+    let added = 0
+    for (let i = 0; i < 3; i++) {
+      if (!store.nextUrl) break
+      const page = await api.questionNext(store.nextUrl, store.sort)
+      const items = discard.filterList(page.answers ?? [])
+      store.items.push(...items)
+      added += items.length
+      store.nextUrl = page.nextUrl
+      if (items.length > 0 || !store.nextUrl) break
+    }
+    return added > 0
   } finally {
     store.loading = false
   }
@@ -73,6 +81,34 @@ function scrollToCard(el) {
     const card = el.querySelector('.card')
     card?.scrollIntoView({ block: 'start', behavior: 'smooth' })
   })
+}
+
+/** 不喜欢该内容 / 不看该作者：与推荐流同一套本地黑名单 + 云端反馈 */
+async function handleDiscard(el, act, btn) {
+  const it = store.items[store.index]
+  if (!it) return
+  if (btn) btn.disabled = true
+  if (act === 'author' && !it.author) {
+    document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: '这条回答没有作者信息' }))
+    return
+  }
+  const res = await discard.applyDiscard(it, act)
+  if (res?.err instanceof SessionError) {
+    document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err: res.err } }))
+  }
+  if (act === 'author') {
+    store.items = store.items.filter((x) => !discard.isAuthorBlocked(x))
+  } else {
+    store.items.splice(store.index, 1)
+  }
+  if (store.index >= store.items.length) {
+    store.index = Math.max(0, store.items.length - 1)
+  }
+  render(el)
+  scrollToCard(el)
+  document.dispatchEvent(
+    new CustomEvent('minizhi:toast', { detail: discard.discardToast(res, act) })
+  )
 }
 
 function render(el) {
@@ -141,6 +177,16 @@ function render(el) {
   }
 
   if (!it) {
+    // 当前页被筛空（屏蔽/无回答）但还有下一页 → 自动续页后再画
+    if (store.nextUrl && !store.loading) {
+      el.innerHTML = '<div class="loading spin">加载回答…</div>'
+      appendMore()
+        .then(() => render(el))
+        .catch((err) =>
+          document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err } }))
+        )
+      return
+    }
     const empty = document.createElement('div')
     empty.className = 'empty'
     empty.textContent = store.loading ? '加载中…' : '这个问题还没有可展示的回答'
@@ -158,6 +204,7 @@ function render(el) {
     onComment: (a, btn, cardEl) => {
       if (a.id) openComments('answer', a.id, cardEl, btn)
     },
+    onDiscard: (act, a, btn) => handleDiscard(el, act, btn),
   })
   el.appendChild(card)
 

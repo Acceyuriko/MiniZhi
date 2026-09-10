@@ -136,36 +136,23 @@ async function handleDiscard(el, onNav, act, btn) {
     document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: '这条内容没有作者信息' }))
     return
   }
-  // 1) 云端反馈（不阻塞本地；失败静默降级为本地屏蔽）
-  let cloudMsg = ''
-  const res = await discard.reportUninterested(it, authorMode ? 'author' : 'less_similar')
-  if (res.err) {
-    if (res.err instanceof SessionError) {
-      document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err: res.err } }))
-    } else {
-      cloudMsg = '（云端反馈失败，仅本地屏蔽）'
-    }
-  } else if (!res.sent) {
-    cloudMsg = '（该类型暂不支持云端反馈，仅本地屏蔽）'
+  const res = await discard.applyDiscard(it, act)
+  if (res?.err instanceof SessionError) {
+    document.dispatchEvent(new CustomEvent('minizhi:error', { detail: { err: res.err } }))
   }
-  // 2) 本地黑名单 + 移除
+  // 本地移除
   if (authorMode) {
-    discard.blockAuthor(it)
     store.items = store.items.filter((x) => !discard.isAuthorBlocked(x))
   } else {
-    discard.blockContent(it)
     store.items.splice(store.index, 1)
   }
-  // 3) 修复位置并重渲染
   if (store.index >= store.items.length) {
     store.index = Math.max(0, store.items.length - 1)
   }
   renderItemView(el, onNav, true)
   scrollToCard(el)
   document.dispatchEvent(
-    new CustomEvent('minizhi:toast', {
-      detail: (authorMode ? '已屏蔽该作者' : '已忽略该内容') + cloudMsg,
-    })
+    new CustomEvent('minizhi:toast', { detail: discard.discardToast(res, act) })
   )
 }
 

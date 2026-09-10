@@ -58,6 +58,7 @@ export function normalizeAnswer(a, questionFallback = null) {
     url: pick(a, 'url', 'url') ?? null,
     author: a.author
       ? {
+          id: pick(a.author, 'id', 'id') ?? null,
           name: pick(a.author, 'name', 'name') ?? '',
           urlToken: pick(a.author, 'urlToken', 'url_token') ?? '',
           headline: pick(a.author, 'headline', 'headline') ?? '',

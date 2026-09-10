@@ -50,7 +50,9 @@ export function blockAuthor(item) {
 
 /** 云端反馈。contentType: 2=回答 1=文章（其他类型无对应枚举 → 只本地） */
 export async function reportUninterested(item, type) {
-  const ct = { answer: '2', article: '1' }[item.machineType ?? item.rawType]
+  // 问题页的回答没有 machineType/rawType 字段，兜底按回答处理
+  const kind = item.machineType ?? item.rawType ?? 'answer'
+  const ct = { answer: '2', article: '1' }[kind]
   if (!ct || !item.id) return { sent: false }
   const form = new URLSearchParams({
     scene_code: 'RECOMMEND',
@@ -70,6 +72,22 @@ export async function reportUninterested(item, type) {
   } catch (err) {
     return { sent: false, err }
   }
+}
+
+/** 一次完整的屏蔽：云端上报（尽力）→ 本地黑名单；返回上报结果供提示 */
+export async function applyDiscard(item, mode) {
+  const res = await reportUninterested(item, mode === 'author' ? 'author' : 'less_similar')
+  if (mode === 'author') blockAuthor(item)
+  else blockContent(item)
+  return res
+}
+
+/** 屏蔽后的提示文案（云端失败/类型不支持时补充说明） */
+export function discardToast(res, mode) {
+  let extra = ''
+  if (res?.err) extra = '（云端反馈失败，仅本地屏蔽）'
+  else if (res && !res.sent) extra = '（该类型暂不支持云端反馈，仅本地屏蔽）'
+  return (mode === 'author' ? '已屏蔽该作者' : '已忽略该内容') + extra
 }
 
 export function counts() {
