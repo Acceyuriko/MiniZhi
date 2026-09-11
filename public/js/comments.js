@@ -2,6 +2,7 @@
 // 打开/收起：openComments(type, id, anchor, btn)；同一时刻只展开一处。
 import { api } from './api.js'
 import { fillContent, fmtTime, esc } from './render.js'
+import * as report from './readreport.js'
 
 let open = null // { type, id, box, btn }
 
@@ -28,6 +29,9 @@ export function openComments(type, id, anchor, btn) {
   }
   // 已开着别处 → 先收起（旧 box 可能已随视图重渲染断开，remove 是安全的）
   if (open) closeComments()
+
+  // 点开评论说明这条内容确实在读 → 按已读上报（收起不算，所以放在这个位置之后）
+  report.noteRead({ machineType: type, id: String(id) })
 
   const box = document.createElement('div')
   box.className = 'comments-inline'

@@ -140,8 +140,10 @@
   实现：`public/js/readreport.js` —— 只报「真正显示给用户的那一条」（不报仅加载进
   内存的），同一内容每次会话只报一次；曝光立即入队、**停留 15 秒**才算已读；队列攒
   4 秒合并成一个请求；失败静默。推荐流/问题页回答走「曝光→停留→已读」，问题页与
-  文章页打开即报已读（照网页版口径）。实测链路：翻页后先发 `touch`，停够时长后发
-  `read` + `read_history/add`（两者会合并进同一批 multipart）。
+  文章页打开即报已读（照网页版口径），**点开评论也算已读**（在 comments.js 的
+  openComments 里报，收起不算——report 放在「确认要展开」之后）。实测链路：翻页后
+  先发 `touch`，停够时长后发 `read` + `read_history/add`（两者会合并进同一批
+  multipart）；点开评论则 `touch`+`read` 合并在同一批里发出。
   服务端白名单相应新增 `/lastread/`、`/api/v4/read_history/`、`/unify-consumption/`。
   （浏览历史读回需要 api.zhihu.com 主机，桥只放行 www，暂未接入验证。）
 - 参考实现对拍工程在 `.scratch/zse-vec`（cargo path 依赖 rs-zse-sign），向量文件
