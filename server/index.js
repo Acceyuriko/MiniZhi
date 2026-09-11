@@ -132,11 +132,16 @@ async function handleApi(req, res, url) {
       if (!session.loadSession()?.cookie) {
         return sendJson(res, 401, { error: '请先粘贴 cookie', hint: 'session' })
       }
-      // 只放行 www.zhihu.com 且命中白名单前缀的请求
+      // 只放行 www.zhihu.com 且命中白名单前缀的请求。
+      // url 允许两种写法：完整 URL，或站内相对路径（'/api/v4/...'）；
+      // 相对路径由我们自己补 host，不可能指向别的站点，同样安全。
       // （注意：知乎分页 next 偶发 zhihu.com//api 双斜杠，先归一化）
-      let pathname = target.startsWith('https://www.zhihu.com/')
-        ? target.slice('https://www.zhihu.com'.length)
-        : null
+      let pathname = null
+      if (target.startsWith('https://www.zhihu.com/')) {
+        pathname = target.slice('https://www.zhihu.com'.length)
+      } else if (target.startsWith('/')) {
+        pathname = target
+      }
       if (pathname?.startsWith('//')) pathname = pathname.slice(1)
       const allowed = pathname && ZHIHU_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))
       if (!allowed) {

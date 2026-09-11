@@ -126,6 +126,13 @@
   刷新页面即清空（public/js/discard.js）。推荐流与问题页共用同一套
   applyDiscard/过滤逻辑（问题页需要 service 端 normalizeAnswer 带 author.id，
   否则跨页作者 key 对不上）。
+  **坑（2026-09 修）**：`api.zh()` 的 url 必须是完整 `https://www.zhihu.com/...`，
+  写成相对路径 `/api/v4/...` 会被白名单判 400「只允许代理知乎白名单 API」，
+  而 `reportUninterested` 把异常 catch 成 `{sent:false}` → **功能静默失效**
+  （discard.js 从诞生起就写错了，只做了本地隐藏）。现已两头堵：
+  ① discard.js 改用完整 URL；② 服务端白名单同时接受站内相对路径
+  （host 由我们自己补，不可能指向别的站点），双斜杠 `//api` 怪癖也仍归一化。
+  失败提示也改成「上报失败，本次仅本地隐藏」，不再误报成「请检查登录」。
 - **会话实测**：粘贴 cookie + 签名请求已打通（账号 Acceyuriko）。
 - **已读上报（解决「推荐流反复推同一条」）实测**：两个端点，均已用真实会话打通
   （我们签名链路能直接过，无需 x-zst-81）：

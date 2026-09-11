@@ -34,7 +34,8 @@ export const api = {
 
   me: () => requestJson('/api/me'),
 
-  /** 白名单直通桥：知乎 API 原样转发（含评论/play_info 等），url 必须是 www.zhihu.com */
+  /** 白名单直通桥：知乎 API 原样转发（含评论/play_info 等）。
+   *  url 传完整 `https://www.zhihu.com/...`，或站内相对路径 `/api/v4/...`（服务端会补 host）。 */
   zh: (url, { method = 'GET', headers = {}, body = null } = {}) =>
     requestJson('/api/zh', {
       method: 'POST',

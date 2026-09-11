@@ -9,6 +9,9 @@
 //   &uninterested_type={less_similar|author}&feed_deliver_type=Normal&desktop=true
 import { api } from './api.js'
 
+// 桥只认完整 URL（相对路径会被白名单拒掉 → 反馈静默失败，别再写成 '/api/...'）
+const ZH = 'https://www.zhihu.com'
+
 // 清理早期版本写入的本地持久化黑名单（现已不使用）
 for (const k of ['mz.discard.content.v1', 'mz.discard.author.v1']) {
   try { localStorage.removeItem(k) } catch { /* 忽略 */ }
@@ -59,7 +62,7 @@ export async function reportUninterested(item, type) {
     desktop: 'true',
   }).toString()
   try {
-    await api.zh('/api/v4/zrec-feedback/uninterested', {
+    await api.zh(`${ZH}/api/v4/zrec-feedback/uninterested`, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded;charset=UTF-8' },
       body: form,
@@ -81,7 +84,8 @@ export async function applyDiscard(item, mode) {
 /** 屏蔽后的提示文案 */
 export function discardToast(res, mode) {
   let extra = ''
-  if (res?.err) extra = '（反馈失败，请检查登录）'
+  // 云端失败时本地仍会隐藏，如实说明，别让用户以为已经反馈成功
+  if (res?.err) extra = '（上报失败，本次仅本地隐藏）'
   else if (res && !res.sent) extra = '（该类型知乎不支持反馈）'
   return (mode === 'author' ? '已反馈：少推该作者' : '已反馈：少推这类内容') + extra
 }
