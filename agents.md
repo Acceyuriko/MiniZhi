@@ -11,7 +11,7 @@
 - Windows 11 + PowerShell 7（`pwsh`）。
 - 已安装 Microsoft.Coreutils，可正常使用大部分 bash 工具；**不要使用 git bash**。
 - pwsh 习惯：
-  - 路径统一用正斜杠 `/`，如 `C:/Users/zec_i/Documents/git/MiniZhi/...`，不要用反斜杠；
+  - 路径统一用正斜杠 `/`，如 `C:/Users/<用户名>/Documents/git/MiniZhi/...`，不要用反斜杠；
   - 字符串参数用单引号 `'...'`，避免转义问题。
 - 本机已装：Node v24、Python 3.13、git（GitHub 直连可达，无需代理；origin 走 SSH）。
 
@@ -53,8 +53,10 @@
   两者别在同一元素上写同一属性。
 - **UI**：单页应用，顶部 Tab（推荐/热榜）；单栏阅读，内容区最宽约 1000px 居中
   （用户屏幕 1920 宽，宽度留配置可调）；亮/暗主题跟随系统。
-- **仓库**：MiniZhi 为私有仓库；`zhihu-plus-plus/`（参考项目 clone）与运行数据
-  目录均已 gitignore；提交用 Conventional Commits，不推送。
+- **仓库**：MiniZhi 托管在 GitHub（`Acceyuriko/MiniZhi`，**公开仓库**，用户确认有意
+  公开）；`zhihu-plus-plus/`（参考项目 clone）与运行数据目录均已 gitignore；提交用
+  Conventional Commits，可以直接 `git push`（上游 `origin/main` 已设好）。
+  **既然公开，别把个人信息写进仓库**（用户名、账号名、本机绝对路径一律用占位符）。
 - **服务常驻 / 开机自启**：`scripts/minizhi-serve.cmd` 是守护循环
   （cd 到项目 → `node server/index.js` → 退出后隔 3 秒重启，日志追加
   `data/server.log`）；`%APPDATA%\Microsoft\Windows\Start Menu\Programs\
@@ -133,7 +135,7 @@
   ① discard.js 改用完整 URL；② 服务端白名单同时接受站内相对路径
   （host 由我们自己补，不可能指向别的站点），双斜杠 `//api` 怪癖也仍归一化。
   失败提示也改成「上报失败，本次仅本地隐藏」，不再误报成「请检查登录」。
-- **会话实测**：粘贴 cookie + 签名请求已打通（账号 Acceyuriko）。
+- **会话实测**：粘贴 cookie + 签名请求已打通（已用真实账号验证）。
 - **已读上报（解决「推荐流反复推同一条」）实测**：两个端点，均已用真实会话打通
   （我们签名链路能直接过，无需 x-zst-81）：
   1. `POST /lastread/touch` —— 曝光/已读。**multipart/form-data**，字段 `items` 是
