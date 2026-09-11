@@ -95,6 +95,48 @@ export function renderContent(html, { onVideo } = {}) {
     }
   })
 
+  // 评论里的图片：知乎不返回 <img>，而是
+  //   <a class="comment_img" href="真图地址" data-width data-height>查看图片</a>
+  // （另有 comment_gif / comment_sticker 两个同构变体）。
+  // 默认就把图片展开显示，省得每张都点一下；点图片可折叠回「查看图片」
+  // （评论里常见 640×3000+ 的整屏长截图，想跳过时收起来）。
+  // href 保留原图直链：中键/右键仍可开原图。
+  doc.querySelectorAll('a.comment_img, a.comment_gif, a.comment_sticker').forEach((a) => {
+    const src = (a.getAttribute('href') || '').trim()
+    if (!/^https?:\/\//i.test(src)) {
+      a.remove()
+      return
+    }
+    const w = Number(a.getAttribute('data-width')) || 0
+    const h = Number(a.getAttribute('data-height')) || 0
+    const img = doc.createElement('img')
+    img.className = 'comment-media'
+    img.src = /\.zhimg\.com/i.test(src) ? api.mediaUrl(src) : src
+    img.alt = '评论图片'
+    img.loading = 'lazy'
+    img.decoding = 'async'
+    // 知乎给的 data-width/height 是小数，取整后用；按原比例占位避免加载时跳动
+    if (w > 0 && h > 0) {
+      img.setAttribute('width', String(Math.round(w)))
+      img.setAttribute('height', String(Math.round(h)))
+      img.style.aspectRatio = `${w} / ${h}`
+    }
+    const label = doc.createElement('span')
+    label.className = 'comment-media-label'
+    label.textContent = '查看图片'
+
+    a.textContent = ''
+    a.appendChild(img)
+    a.appendChild(label)
+    a.classList.add('comment-media-link', 'is-open')
+    a.setAttribute('aria-expanded', 'true')
+    a.addEventListener('click', (ev) => {
+      ev.preventDefault() // 主点击 = 折叠/展开；要开原图用中键或右键
+      const nowOpen = a.classList.toggle('is-open')
+      a.setAttribute('aria-expanded', String(nowOpen))
+    })
+  })
+
   // 站内链接：问题/回答/文章/想法转 hash 路由，其余新标签
   doc.querySelectorAll('a[href]').forEach((a) => {
     const href = a.getAttribute('href')

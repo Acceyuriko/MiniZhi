@@ -112,6 +112,18 @@
      noscript），再按 URL 里的 `v2-<32hex>` token 去重，否则同一张图显示两遍。
      实测：12 张图的回答去重后 8 张，滚动后全部经代理正常加载（图片代理不受 API
      的 1s 串行限速；`loading="lazy"` 只在滚到视口才请求，属正常现象）。
+- **评论图片（2026-09 实测）**：评论里的图**不是 `<img>`**，而是
+  `<a class="comment_img" href="真图地址" data-width data-height>查看图片</a>`
+  （同构变体还有 `comment_gif`、`comment_sticker`；后两者线上样本很罕见，
+  只抓到 comment_img）。只按原文渲染的话，评论里就只剩「查看图片」四个字。
+  处理（render.js）：把 `<a>` 留下、内容换成 `<img>` + `.comment-media-label`
+  文字；默认 `.is-open` 展开显示图片，**点一下折叠回「查看图片」文字**
+  （评论里常见 640×3650 的整屏长截图，不想看时可收起；实测折叠 3667px → 29px）。
+  图片走 `/media` 代理；`data-width/height` 是小数要取整（206.8148…）并设
+  aspect-ratio 防跳动；`href` 保留原图直链（中键/右键仍可开原图）。
+  注意 `.content-body a` 自带下划线，包裹图片的链接要单独去掉。
+  **验证坑**：`loading="lazy"` 会让未滚到视口的图 `naturalWidth` 为 0，
+  别据此判定「图片加载失败」——先 scrollIntoView 再验。
 - **play_info 通道已验证**：POST /api/v4/video/play_info?r={videoId} + JSON body
   {content_id,content_type_str,video_id,scene_code:'answer_detail_web',
   is_only_video:true} + 头 x-app-za:OS=webplayer（照 plus-plus）→ 知乎正常受理
