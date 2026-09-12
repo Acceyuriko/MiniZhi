@@ -11,6 +11,7 @@
 // 穿透（防止把本机变成开放代理）。
 
 import { createHash } from 'node:crypto'
+import { Readable } from 'node:stream'
 
 const ALLOWED_HOSTS = new Set([
   'pic1.zhimg.com',
@@ -26,8 +27,11 @@ const ALLOWED_HOSTS = new Set([
   'video.zhimg.com',
   'vdn.appsimg.com', // 视频封面/流
   'appvdn.appsimg.com',
-  'vdn.vzuu.com',
 ])
+
+// 知乎视频 CDN 用编号域名轮换（2026-09 实测 play_info 返回的是 vdn3.vzuu.com，
+// 白名单里只写 vdn.vzuu.com 会 403），按后缀放行
+const ALLOWED_MEDIA_SUFFIXES = ['.vzuu.com']
 
 const CONTENT_HINTS = {
   '.mp4': 'video/mp4',
@@ -74,7 +78,10 @@ const cache = new MemoryLRU()
 export function isAllowedMediaUrl(raw) {
   try {
     const u = new URL(raw)
-    return (u.protocol === 'https:' || u.protocol === 'http:') && ALLOWED_HOSTS.has(u.hostname)
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false
+    return (
+      ALLOWED_HOSTS.has(u.hostname) || ALLOWED_MEDIA_SUFFIXES.some((s) => u.hostname.endsWith(s))
+    )
   } catch {
     return false
   }
@@ -124,7 +131,10 @@ export async function fetchMedia(url, cookie) {
   }
   const contentType = res.headers.get('content-type') || guessContentType(url)
   if (streaming) {
-    return { status: 200, contentType, stream: res.body, fromCache: false }
+    // fetch 的 res.body 是 web ReadableStream，没有 .pipe()，调用方（index.js）
+    // 直接 .pipe(res) 会抛错且响应头已发出 → 连接永远不结束（实测视频卡死超时）。
+    // 转成 Node 流再交出去。
+    return { status: 200, contentType, stream: Readable.fromWeb(res.body), fromCache: false }
   }
   const body = Buffer.from(await res.arrayBuffer())
   cache.put(key, body, contentType)

@@ -2,7 +2,6 @@
 import { api, SessionError } from '../api.js'
 import { answerCard, navBar, authorBlock, feedbackRow } from '../ui.js'
 import { esc, fmtTime, fillContent } from '../render.js'
-import { playVideoIn } from '../video.js'
 import { openComments } from '../comments.js'
 import * as discard from '../discard.js'
 import * as report from '../readreport.js'

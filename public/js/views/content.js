@@ -2,6 +2,7 @@
 // 数据来自推荐流会话缓存（完整正文在 feed 里已带）；缓存里没有时给出外链兜底。
 import { esc, fillContent } from '../render.js'
 import { answerCard, navBar, authorBlock } from '../ui.js'
+import { playVideoIn } from '../video.js'
 import { openComments } from '../comments.js'
 import { store as recStore } from './recommend.js'
 import * as report from '../readreport.js'
@@ -66,7 +67,11 @@ export function mount(container, { kind, id }) {
     if (it.author) card.appendChild(authorBlock(it.author))
     const body = document.createElement('div')
     body.className = 'content-body'
-    fillContent(body, it.content || it.excerpt)
+    fillContent(body, it.content || it.excerpt, {
+      onVideo: (videoId, holder) => playVideoIn(videoId, it.id, holder, {
+        onError: (msg) => { holder.innerHTML = `<p class="muted">${msg}</p>` },
+      }),
+    })
     card.appendChild(body)
     el.appendChild(card)
   }

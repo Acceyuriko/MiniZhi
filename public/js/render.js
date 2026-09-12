@@ -158,16 +158,23 @@ export function renderContent(html, { onVideo } = {}) {
     }
   })
 
-  // 视频卡片（.zvideo）：有视频 id 则替换为可点击播放的容器
-  doc.querySelectorAll('.zvideo').forEach((div) => {
+  // 视频卡片（.zvideo / a.video-box）：有视频 id 则替换为可点击播放的容器。
+  // video-box 的 href 是 link.zhihu.com 中转链接，点出去会 301 到
+  // video.zhihu.com/video/{id}?$args，那个页面在浏览器里打不开（知乎自己的
+  // 跳转 bug），所以这里就地播放，不给外链。注意 data-video-id / data-video-playable
+  // 都是空串，真正的 id 在 data-lens-id 和 href/文本里的 /video/{id}。
+  doc.querySelectorAll('.zvideo, a.video-box').forEach((div) => {
     const videoId =
       div.getAttribute('data-video-id') ||
+      div.getAttribute('data-lens-id') ||
       div.getAttribute('data-id') ||
       (div.innerHTML.match(/\/video\/(\d+)/) || [])[1] ||
       (div.innerHTML.match(/videoId["']?\s*[:=]\s*["']?(\d+)/) || [])[1]
     if (!videoId) return
     const posterImg = div.querySelector('img')
-    const poster = posterImg ? api.mediaUrl(posterImg.getAttribute('src') || posterImg.getAttribute('data-src') || '') : ''
+    // data-poster 是原始封面地址；img 的 src 已被上面的图片流程换成 /media 代理地址
+    const raw = div.getAttribute('data-poster') || posterImg?.getAttribute('src') || ''
+    const poster = !raw ? '' : raw.startsWith('/media?') ? raw : api.mediaUrl(raw)
     const holder = document.createElement('div')
     holder.className = 'zvideo-holder'
     holder.style.cssText =

@@ -93,10 +93,7 @@ export function answerCard(a, h = {}) {
   body.className = 'content-body'
   fillContent(body, a.content ?? a.excerpt ?? '', {
     onVideo: (videoId, holder) => playVideoIn(videoId, a.answerId || a.id, holder, {
-      onError: (msg) => {
-        holder.innerHTML = ''
-        holder.innerHTML = `<p class="muted">${msg}</p>`
-      },
+      onError: (msg) => { holder.innerHTML = `<p class="muted">${msg}</p>` },
     }),
   })
   card.appendChild(body)

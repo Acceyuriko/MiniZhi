@@ -124,12 +124,36 @@
   注意 `.content-body a` 自带下划线，包裹图片的链接要单独去掉。
   **验证坑**：`loading="lazy"` 会让未滚到视口的图 `naturalWidth` 为 0，
   别据此判定「图片加载失败」——先 scrollIntoView 再验。
-- **play_info 通道已验证**：POST /api/v4/video/play_info?r={videoId} + JSON body
-  {content_id,content_type_str,video_id,scene_code:'answer_detail_web',
-  is_only_video:true} + 头 x-app-za:OS=webplayer（照 plus-plus）→ 知乎正常受理
-  （假 id 返回业务错 VideoIDErrorException 而非 403，通道 OK）。真实视频样本在
-  本会话推荐流/热榜首屏均未出现（12 页推荐全 answer），待用户遇到带视频内容时
-  实测 mp4/m3u8 播放。
+- **视频站内播放（2026-09 端到端跑通，一次修了三个坑）**：POST
+  /api/v4/video/play_info?r={videoId} + JSON body {content_id,content_type_str,
+  video_id,scene_code:'answer_detail_web',is_only_video:true} + 头
+  x-app-za:OS=webplayer（照 plus-plus）→ 返回 video_play.playlist.mp4[]（含
+  480P/720P，选 bitrate 最大）。实测 61 秒 / 1280×756 视频在页面里正常播放
+  （readyState 4、进度推进）。三个坑：
+  1. **正文里的视频卡片有两种形态**：`.zvideo` 和 **`a.video-box`**（用户实际
+     遇到的是后者，之前只匹配 .zvideo → 没被当视频处理，只当普通外链）。
+     video-box 的陷阱：`href` 是 `https://link.zhihu.com/?target=...` 中转链接，
+     点出去会 301 到 `video.zhihu.com/video/{id}?$args`，那个页面在浏览器里打不开
+     （`?$args` 是知乎自己 Nginx 变量没展开）；而且 **`data-video-id` /
+     `data-video-playable` / `data-name` 都是空串**，真正的 id 在
+     **`data-lens-id`** 和 href/文本里的 `/video/{id}`。封面用 `data-poster`
+     （原始地址）——注意 `<img>` 的 src 已被图片流程换成 `/media?url=...`，
+     别再 api.mediaUrl 包一层（会双重代理）。
+  2. **`/media` 代理的流式分支从来没工作过**（本次修）：`fetch()` 返回的
+     `res.body` 是 web ReadableStream，**没有 `.pipe()`**；index.js 里
+     `r.stream.pipe(res)` 抛错时响应头已发出，catch 里 `if (!res.headersSent)`
+     不再补救 → 连接永远不结束，客户端**卡死到超时**（实测 180s 无响应）。
+     修法：proxy.js 里 `Readable.fromWeb(res.body)` 后再交出去。图片走 buffer
+     分支所以一直没暴露，只有视频（mp4/m3u8/ts）走这条。
+  3. **媒体白名单要按后缀放行 `.vzuu.com`**：知乎视频 CDN 用编号域名轮换，
+     play_info 实测返回 `vdn3.vzuu.com`，而白名单里只写了 `vdn.vzuu.com`
+     → 403 forbidden host。
+  另：代理目前不转发 Range（返回 200 + chunked，不返回 206），实测能正常播放，
+  但拖动进度条的 seek 行为未验证。
+  接线：render.js 把 video-box/zvideo 换成 `.zvideo-holder`（封面 + ▶ 按钮），
+  点击 → onVideo 回调 → video.js 的 playVideoIn。`onVideo` 由 ui.js 的
+  answerCard 提供，覆盖推荐流/问题页/文章页的作者卡片；**content.js 的文章正文
+  原先没传 onVideo**（改了会变成点不动的播放按钮），本次一并接上。
 - **推荐流反馈（不感兴趣）实测**：POST /api/v4/zrec-feedback/uninterested，
   表单 body scene_code=RECOMMEND&content_type={2=回答|1=文章}&content_token={内容
   id}&uninterested_type={less_similar=该内容|author=该作者}&feed_deliver_type=
