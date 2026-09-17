@@ -159,19 +159,27 @@ export function answerCard(a, h = {}) {
   return card
 }
 
-/** 底部翻页导航条 */
-export function navBar({ onPrev, onNext, prevText = '◀ 上一条', nextText = '下一条 ▶' }) {
+/** 底部翻页导航条（onFirst 只在需要「最前」按钮时传） */
+export function navBar({ onFirst, onPrev, onNext, prevText = '◀ 上一条', nextText = '下一条 ▶' }) {
   const bar = document.createElement('div')
   bar.className = 'navbar'
+  let first = null
+  if (onFirst) {
+    first = document.createElement('button')
+    first.className = 'btn nav-first'
+    first.textContent = '⏮ 最前'
+    first.addEventListener('click', onFirst)
+    bar.appendChild(first)
+  }
   const prev = document.createElement('button')
-  prev.className = 'btn'
+  prev.className = 'btn nav-prev'
   prev.textContent = prevText
   prev.addEventListener('click', onPrev)
   const next = document.createElement('button')
-  next.className = 'btn btn-primary'
+  next.className = 'btn btn-primary nav-next'
   next.textContent = nextText
   next.addEventListener('click', onNext)
   bar.appendChild(prev)
   bar.appendChild(next)
-  return { bar, prev, next }
+  return { bar, prev, next, first }
 }

@@ -228,6 +228,15 @@ function render(el) {
   const nb = navBar({
     prevText: '◀ 上一个回答',
     nextText: '下一个回答 ▶',
+    onFirst: () => {
+      if (store.index === 0) {
+        document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: '已经是第一个回答' }))
+        return
+      }
+      store.index = 0
+      render(el)
+      scrollToCard(el)
+    },
     onPrev: () => {
       if (store.index > 0) {
         store.index--
@@ -290,8 +299,8 @@ export function mount(container, { qid, sort = 'default', from = null }) {
       }
     },
     step(d) {
-      if (d > 0) el.querySelector('.navbar .btn-primary')?.click()
-      else el.querySelector('.navbar .btn:not(.btn-primary)')?.click()
+      if (d > 0) el.querySelector('.navbar .nav-next')?.click()
+      else el.querySelector('.navbar .nav-prev')?.click()
     },
     onFirstPaint: () => {
       const key = `${qid}/${sort}`
