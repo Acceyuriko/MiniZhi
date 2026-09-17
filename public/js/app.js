@@ -141,6 +141,37 @@ function keydown(e) {
   }
 }
 
+// ── 链接跳转（顶栏输入框）────────────────────────────
+/** 把粘贴的知乎链接 / 裸 id 解析成 hash 路由，认不出返回 null */
+function parseLink(input) {
+  const s = input.trim().split('?')[0].split('#')[0].replace(/^https?:\/\//, '').replace(/\/+$/, '')
+  if (!s) return null
+  if (/^\d+$/.test(s)) return '#question/' + s // 只给一串数字时按问题 id 处理
+  const q = s.match(/(?:^|\/)question\/(\d+)/)
+  const aid = s.match(/(?:^|\/)answer\/(\d+)/)
+  if (q) return '#question/' + q[1] + (aid ? '?from=' + aid[1] : '')
+  const a = s.match(/(?:^|\/)p\/(\d+)/) || s.match(/(?:^|\/)pin\/(\d+)/)
+  if (!a) return null
+  return '#content/' + (s.includes('/pin/') ? 'pin' : 'article') + '/' + a[1]
+}
+
+function goByLink(input) {
+  const hash = parseLink(input)
+  if (!hash) return toast('认不出这个链接，请粘贴知乎问题/回答/文章/想法的网址')
+  if (location.hash === hash) navigate()
+  else location.hash = hash
+}
+
+function initJump() {
+  const box = document.getElementById('jump')
+  box.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return
+    goByLink(box.value)
+    box.value = ''
+    box.blur()
+  })
+}
+
 // ── 登录对话框 ────────────────────────────────────────
 function initSettings() {
   document.getElementById('who').addEventListener('click', () => settingsEl().showModal())
@@ -190,6 +221,7 @@ function initSettings() {
 // ── 启动 ──────────────────────────────────────────────
 async function boot() {
   initSettings()
+  initJump()
 
   document.getElementById('btnRefresh').addEventListener('click', () => {
     currentView?.refresh?.()

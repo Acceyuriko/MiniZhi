@@ -16,6 +16,7 @@ export const store = {
   loading: false,
   note: '',
   key: '', // 唯一键：qid/sort 变了就重载
+  located: '', // 已经定位过的来源回答 id（同一个问题换回答链接时要重新定位）
 }
 
 async function loadFirstPage(qid, sort) {
@@ -295,13 +296,15 @@ export function mount(container, { qid, sort = 'default', from = null }) {
     onFirstPaint: () => {
       const key = `${qid}/${sort}`
       const sameQuestion = store.qid === qid
-      if (store.key === key && store.items.length > 0) {
+      // 有 from（点了某条回答/粘贴了回答链接）就必须定位到它；重复进同一个回答才续看
+      if (store.key === key && store.items.length > 0 && (!from || String(from) === store.located)) {
         render(el) // 会话级：同 qid+sort 直接续看
         return
       }
       store.qid = qid
       store.sort = sort
       store.key = key
+      store.located = from ? String(from) : ''
       store.items = []
       store.nextUrl = null
       store.question = null

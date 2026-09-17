@@ -77,21 +77,31 @@
   1. 解析一律用 `parseZhihuJson`（把 ≥16 位整数字面量保精度转成字符串）；
   2. **取 id 优先从 `url` 字符串提取**（`/question/(\d+)`、`/answer/(\d+)`），
      不信任纯数字 id 字段。
-- **答案正文获取（2026 新版知乎已重构，重点！）**：
-  - 旧式 `/api/v4/answers/{id}?include=...`、`/feeds?include=...`（offset 分页）
-    **已废弃**：任何 include 参数 → HTML 404；无 include 的回答详情不含正文。
-  - 列表端点（如 members/*/answers）仍支持 include；热榜/推荐流自带正文。
-  - **问题页正文走 SSR**：GET `https://www.zhihu.com/question/{qid}`（纯净浏览器
-    头 + cookie，**无签名**）→ 取 `<script id="js-initialData" type="text/json">`
-    → `initialState.question.answers.{qid}`：`ids`（有序回答引用+cursor）、
-    `next`（下一页完整 URL：**cursor 参数 + `data[*].xxx` 长 include**，已被验证
-    返回带正文回答）、`sessionId`；`initialState.entities.answers`（正文等）、
-    `entities.questions`（标题/计数）。回答实体字段为 **camelCase**，API 返回为
-    **snake_case**。
-  - feeds cursor 翻页 URL 的 `paging.next` 有 `zhihu.com//api/` **双斜杠怪癖**，
+- **答案正文获取（2026-09-14 再实测，口径已变，重点！）**：
+  - **知乎内容页 SSR 全部 403 了**：`/question/{qid}`、`/answer/{id}`、
+    `zhuanlan.zhihu.com/p/{id}` 一律返回 403 + 628 字节的 **zse-ck 反爬挑战页**
+    （`<meta id="zh-zse-ck">` + `static.zhihu.com/zse-ck/v4/*.js`，要在浏览器里跑
+    JS 才给 cookie）。带不带 cookie、补不补 `sec-fetch-*`/`accept-encoding` 全试过，
+    都 403；首页 `/` 和 `/hot` 仍 200。→ **Node 侧再也抓不到问题页 HTML，
+    依赖 SSR initialData 的方案作废**（server/lib/zhihu.js 的 `plainGetText` 因此
+    已无人调用，留着只为将来有办法过 zse-ck 时复用）。
+  - **改用 answers 端点（现在完全可用）**：
+    `GET /api/v4/questions/{qid}/answers?limit=N&include=<长 include>` → 200，
+    返回带**完整正文**的回答（`content`）+ 每条内嵌 `question` 字段；分页是
+    **offset**（`paging.next` 里 `offset=5`），实测稳定可续页；`limit` 生效。
+  - **该端点不认 order 参数**：`order=default/updated/created` 返回顺序完全相同
+    （都回落知乎默认的“热度”口径），所以“时间排序”仍必须用
+    `feeds?limit=N&order=updated&include=<长 include>`（实测严格按 updated_time
+    倒序）；feeds 分页是 **cursor**，两者 next 口径不同，续页代码不要混。
+  - 旧式 `/api/v4/answers/{id}?include=...` **现在也能用了**（实测 200 且带正文）；
+    问题详情 `/api/v4/questions/{qid}` 只给 title/id/created，
+    **不给 answer_count/follower_count**（`include=*` 反而 400）→ 问题页头部的
+    “N 个回答 / N 关注”计数目前无来源，界面直接不显示。
+  - 旧式 offset feeds `paging.next` 的 `zhihu.com//api/` **双斜杠怪癖**依旧存在，
     使用前必须清洗；snake_case 回答 content 字段与正文同在 target 上。
 - **排序语义实测**：问题 feeds `order=updated` → 按 updated_time 严格倒序（可作
-  “时间”排序）；`order=created` 返回乱序（疑似回落默认，不可用）；默认=热度。
+  “时间”排序），cursor 续页时 next 自带 order；`order=created` 返回乱序（疑似回落
+  默认，不可用）；默认=热度（现在由 answers 端点提供）。
 - **评论**：`/api/v4/comment_v5/answers/{aid}/root_comment?order_by=default` 与
   `/comment/{cid}/child_comment` 均可用；评论精确 id 从 comment.url 提取
   （**注意 url 两种形态：`/comment/{id}` 与 `/comments/{id}`**，字段也时有时无，
