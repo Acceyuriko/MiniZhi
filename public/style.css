@@ -78,6 +78,13 @@ button { font: inherit; color: inherit; }
 .tabs a:hover { color: var(--fg); text-decoration: none; }
 .tabs a.active { color: var(--accent); background: var(--card); box-shadow: 0 1px 4px rgb(0 0 0 / 0.08); font-weight: 600; }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.jump {
+  width: 12ch; padding: 4px 10px; font: inherit; font-size: 13px;
+  color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  transition: width .15s, border-color .15s;
+}
+.jump::placeholder { color: var(--muted); }
+.jump:focus { width: 30ch; border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); outline: none; }
 
 /* ── 按钮 ─────────────────────────────── */
 button {
@@ -173,6 +180,8 @@ button:disabled { opacity: .45; cursor: default; }
 .card-feedback { margin-left: auto; display: inline-flex; gap: 2px; }
 .card-feedback .ghost { color: var(--muted); font-size: 13px; }
 .card-feedback .ghost:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: transparent; color: var(--danger); }
+/* 分享不是「毙掉内容」，悬停用主题色，别跟反馈按钮一样变红 */
+.card-feedback .share:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
 
 /* 底部/侧边阅读导航 */
 .navbar { display: flex; justify-content: center; gap: 14px; margin: 22px auto 6px; }

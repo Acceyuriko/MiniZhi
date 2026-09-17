@@ -15,7 +15,38 @@ export function authorBlock(author) {
   return box
 }
 
-/** 推荐流反馈按钮组（不喜欢该内容 / 不看该作者），供卡片头部使用 */
+/** 这条内容在知乎的网页地址（分享用）。
+ *  按类型 + id 拼，不用 url 字段（feed 里给的是 https://api.zhihu.com/answers/xxx，
+ *  分享出去打不开）；问题页的回答没有 machineType 字段，按回答处理。 */
+export function zhihuUrlOf(a) {
+  const kind = a.machineType ?? a.rawType ?? 'answer'
+  const aid = a.answerId || a.id
+  const qid = a.questionId || a.question?.id
+  if (kind === 'answer' && aid) {
+    return qid
+      ? `https://www.zhihu.com/question/${qid}/answer/${aid}`
+      : `https://www.zhihu.com/answer/${aid}`
+  }
+  if (kind === 'article' && a.id) return `https://zhuanlan.zhihu.com/p/${a.id}`
+  if (kind === 'pin' && a.id) return `https://www.zhihu.com/pin/${a.id}`
+  return a.url ?? ''
+}
+
+const toast = (msg) => document.dispatchEvent(new CustomEvent('minizhi:toast', { detail: msg }))
+
+/** 分享：把这条内容的知乎链接复制到剪贴板 */
+async function copyZhihuLink(a) {
+  const url = zhihuUrlOf(a)
+  if (!url) return toast('这条内容没有可复制的知乎链接')
+  try {
+    await navigator.clipboard.writeText(url)
+    toast('已复制知乎链接')
+  } catch {
+    toast('复制失败：' + url)
+  }
+}
+
+/** 卡片头部按钮组（不喜欢该内容 / 不看该作者 / 分享） */
 export function feedbackRow(onDiscard, a) {
   const fb = document.createElement('div')
   fb.className = 'card-feedback'
@@ -29,6 +60,11 @@ export function feedbackRow(onDiscard, a) {
     b.addEventListener('click', () => onDiscard(act, a, b))
     fb.appendChild(b)
   }
+  const share = document.createElement('button')
+  share.className = 'ghost share'
+  share.textContent = '分享'
+  share.addEventListener('click', () => copyZhihuLink(a))
+  fb.appendChild(share)
   return fb
 }
 
