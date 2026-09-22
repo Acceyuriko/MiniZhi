@@ -128,9 +128,7 @@ export function answerCard(a, h = {}) {
   const body = document.createElement('div')
   body.className = 'content-body'
   fillContent(body, a.content ?? a.excerpt ?? '', {
-    onVideo: (videoId, holder) => playVideoIn(videoId, a.answerId || a.id, holder, {
-      onError: (msg) => { holder.innerHTML = `<p class="muted">${msg}</p>` },
-    }),
+    onVideo: (videoId, holder) => playVideoIn(videoId, a.answerId || a.id, holder),
   })
   card.appendChild(body)
 

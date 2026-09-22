@@ -158,6 +158,11 @@ export function request(pathAndQuery, { method = 'GET', body = null, headers = {
     })
     const text = await res.text()
     if (res.status === 401 || res.status === 403) {
+      // 10003「请求参数异常」是知乎侧偶发拒绝，不是登录态失效
+      //（2026-09 实测：同参数重发 8/8 全 200）→ 走 ZhihuError，别提示重贴 cookie
+      if (text.includes('"code":10003')) {
+        throw new ZhihuError(res.status, '临时拒绝（10003 请求参数异常），稍后重试：' + text.slice(0, 300))
+      }
       throw new SessionError(res.status, text.slice(0, 300))
     }
     if (!res.ok) {

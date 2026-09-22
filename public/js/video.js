@@ -18,12 +18,19 @@ async function loadHls() {
 /**
  * 在 holder（已替换的 .zvideo 容器）内播放视频。
  * contentId = 所在回答/文章 id，用于 play_info 的 content_id。
+ * 失败时在 holder 内显示原因 + 「重试」按钮。
  */
-export async function playVideoIn(videoId, contentId, holder, { onError } = {}) {
+export async function playVideoIn(videoId, contentId, holder) {
   const fail = (msg) => {
-    if (onError) onError(msg)
+    holder.innerHTML = `<p class="muted">${msg}</p>`
+    const btn = document.createElement('button')
+    btn.className = 'ghost'
+    btn.textContent = '重试'
+    btn.addEventListener('click', () => playVideoIn(videoId, contentId, holder))
+    holder.appendChild(btn)
   }
   try {
+    holder.innerHTML = '<p class="muted">拉取视频地址…</p>'
     const res = await api.zh(`https://www.zhihu.com/api/v4/video/play_info?r=${videoId}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-app-za': 'OS=webplayer' },

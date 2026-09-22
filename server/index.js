@@ -151,6 +151,9 @@ async function handleApi(req, res, url) {
         method: body.method === 'POST' ? 'POST' : 'GET',
         body: body.body ?? null,
         headers: body.headers ?? {},
+      }).catch((err) => {
+        console.error(`[minizhi] zh bridge error: ${body.method ?? 'GET'} ${pathname} ->`, err?.message ?? err)
+        throw err
       })
       return sendJson(res, 200, json)
     }

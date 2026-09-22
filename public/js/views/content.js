@@ -68,9 +68,7 @@ export function mount(container, { kind, id }) {
     const body = document.createElement('div')
     body.className = 'content-body'
     fillContent(body, it.content || it.excerpt, {
-      onVideo: (videoId, holder) => playVideoIn(videoId, it.id, holder, {
-        onError: (msg) => { holder.innerHTML = `<p class="muted">${msg}</p>` },
-      }),
+      onVideo: (videoId, holder) => playVideoIn(videoId, it.id, holder),
     })
     card.appendChild(body)
     el.appendChild(card)
