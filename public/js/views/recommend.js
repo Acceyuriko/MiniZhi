@@ -53,6 +53,7 @@ function normalizeFeedItem(item) {
     voteupCount: t.voteup_count ?? t.voteupCount ?? 0,
     commentCount: t.comment_count ?? t.commentCount ?? 0,
     createdTime: t.created_time ?? t.createdTime ?? t.updated_time ?? t.updatedTime ?? null,
+    updatedTime: t.updated_time ?? t.updatedTime ?? null,
     author,
     question,
     url: t.url ?? item.url ?? '',

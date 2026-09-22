@@ -72,6 +72,7 @@ export function feedbackRow(onDiscard, a) {
  * 渲染一条“回答式”卡片（回答 / 文章 / 想法共用）。
  * @param {{kind:string, title?:string, content:string, excerpt?:string, author?:object,
  *          voteupCount?:number, commentCount?:number, createdTime?:number|string,
+ *          updatedTime?:number|string,
  *          question?:object, id:string, url?:string, answerId?:string}} a 已归一化的实体
  * @param {{onComment?:fn(id), onQuestion?:fn(qid, aid), onDiscard?:fn(act, a, btn)}} h 行为回调
  */
@@ -134,9 +135,13 @@ export function answerCard(a, h = {}) {
 
   const meta = document.createElement('div')
   meta.className = 'answer-meta'
+  const kindLabel = a.kind && a.kind !== '回答' ? '发布于' : '回答于'
   meta.innerHTML =
     `<span>👍 ${a.voteupCount ?? 0}</span>` +
-    (a.createdTime != null ? `<span>${fmtTime(a.createdTime)}</span>` : '') +
+    (a.createdTime != null ? `<span>${kindLabel} ${fmtTime(a.createdTime)}</span>` : '') +
+    (a.updatedTime != null && a.updatedTime !== a.createdTime
+      ? `<span>编辑于 ${fmtTime(a.updatedTime)}</span>`
+      : '') +
     (a.commentCount != null ? `<span>${a.commentCount} 条评论</span>` : '')
   const btn = document.createElement('button')
   btn.className = 'ghost'

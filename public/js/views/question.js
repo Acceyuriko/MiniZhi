@@ -1,7 +1,7 @@
 // question.js —— 问题页视图：标题 + 排序切换 + 单回答阅读 + 定位来源回答
 import { api, SessionError } from '../api.js'
 import { answerCard, navBar } from '../ui.js'
-import { fmtTime, fillContent } from '../render.js'
+import { fillContent } from '../render.js'
 import { openComments } from '../comments.js'
 import * as discard from '../discard.js'
 import * as report from '../readreport.js'
@@ -210,8 +210,7 @@ function render(el) {
 
   const prog = document.createElement('div')
   prog.className = 'reader-meta'
-  prog.innerHTML = `<span>回答 ${store.index + 1} / ${store.items.length}${store.nextUrl ? '（还有更多，翻到底自动续）' : ' · 已到底'}</span>` +
-    (it.updatedTime ? `<span>更新 ${fmtTime(it.updatedTime)}</span>` : '')
+  prog.innerHTML = `<span>回答 ${store.index + 1} / ${store.items.length}${store.nextUrl ? '（还有更多，翻到底自动续）' : ' · 已到底'}</span>`
   el.appendChild(prog)
 
   const card = answerCard(it, {
