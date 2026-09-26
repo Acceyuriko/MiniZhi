@@ -3,13 +3,16 @@ import { esc, fmtTime, fillContent } from './render.js'
 import { api } from './api.js'
 import { playVideoIn } from './video.js'
 
-export function authorBlock(author) {
+export function authorBlock(author, ip = null) {
   const box = document.createElement('div')
   box.className = 'answer-author'
   const avatar = author?.avatarUrl || author?.avatar_url
   box.innerHTML =
     (avatar ? `<img class="avatar" alt="" loading="lazy" src="${esc(api.mediaUrl(avatar))}" referrerpolicy="no-referrer">` : '<span class="avatar"></span>') +
-    `<div><div class="author-name">${esc(author?.name ?? '匿名用户')}</div>` +
+    '<div class="author-box">' +
+    `<div class="author-line"><span class="author-name">${esc(author?.name ?? '匿名用户')}</span>` +
+    (ip ? `<span class="author-ip">${esc(ip)}</span>` : '') +
+    '</div>' +
     (author?.headline ? `<div class="author-headline">${esc(author.headline)}</div>` : '') +
     '</div>'
   return box
@@ -124,7 +127,7 @@ export function answerCard(a, h = {}) {
   }
   card.appendChild(head)
 
-  if (a.author) card.appendChild(authorBlock(a.author))
+  if (a.author) card.appendChild(authorBlock(a.author, a.ipInfo))
 
   const body = document.createElement('div')
   body.className = 'content-body'

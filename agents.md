@@ -106,6 +106,21 @@
   `/comment/{cid}/child_comment` 均可用；评论精确 id 从 comment.url 提取
   （**注意 url 两种形态：`/comment/{id}` 与 `/comments/{id}`**，字段也时有时无，
   → 前端兜底逻辑：url 正则 || comment.id 字符串字段）。
+- **IP 属地（2026-09 实测，已实现）**：两条完全不同的路子。
+  1. **回答**：接口默认不给，必须在 include 里加 `ip_info`（实测清单尾部追加
+     `,ip_info` 与 `data[*].ip_info` 等效）；answers（热度）与 feeds（时间）两个
+     端点都认，值形如 `"IP 属地河南"`（已含前缀）。零额外请求。
+  2. **评论**：`comment_tag` 数组里本来就有，形如
+     `{type:'ip_info', text:'广东', color:'#999999'}`，text 只是省名（也出现过
+     “老挝”这种境外）→ 显示时自己补「IP 属地」前缀。子评论同样带。零额外请求。
+  3. **推荐流 / 热榜拿不到**：recommend 端点无论怎么加 include（`data[*].ip_info`、
+     `data[*].target.ip_info`）都不返回 ip_info；热榜 target 是问题，本来也没有。
+     要显示只能逐条再请求详情，每条多 1 次请求（受 1s 串行限速），用户明确选了
+     「不做推荐流」。
+  实现：`server/lib/question.js` 的 INCLUDE + normalizeAnswer 的 `ipInfo`；
+  `public/js/ui.js` 的 `authorBlock(author, ip)` → `.author-ip`（muted 13px）；
+  `public/js/comments.js` 从 comment_tag 取。注意**卡片没数据就什么都不显示**
+  （推荐流卡片因此看不到 IP，属预期，不是 bug）。
 - **字段稳定性坑（2026-09 实测）**：知乎接口的 `url` 字段**时有时无**（热榜条目
   的 target.url、根评论的 url 都遇到过缺失/变体）→ 前端一律「url 正则提取 ||
   id 兜底」，id 靠 parseZhihuJson 保精度字符串化后可直接用。

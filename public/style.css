@@ -124,6 +124,8 @@ button:disabled { opacity: .45; cursor: default; }
   background: var(--line); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent);
 }
 .author-name { font-weight: 650; font-size: 16px; letter-spacing: -0.01em; }
+.author-line { display: flex; align-items: baseline; gap: 8px; }
+.author-ip { color: var(--muted); font-size: 13px; }
 .author-headline { color: var(--muted); font-size: 13px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 560px; }
 
 /* 卡片顶行（类型标签 + 反馈按钮） */

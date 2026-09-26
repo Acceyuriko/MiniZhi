@@ -92,6 +92,14 @@ function commentEl(c, { child = false } = {}) {
     t.textContent = fmtTime(c.created_time)
     head.appendChild(t)
   }
+  // IP 属地：接口本来就带在 comment_tag 里（type=ip_info，text 是省名），不需额外请求
+  const ip = (c?.comment_tag ?? []).find((t) => t?.type === 'ip_info')?.text
+  if (ip) {
+    const s = document.createElement('span')
+    s.className = 'c-time'
+    s.textContent = `IP 属地${ip}`
+    head.appendChild(s)
+  }
   el.appendChild(head)
 
   const content = document.createElement('div')

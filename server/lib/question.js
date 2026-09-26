@@ -14,8 +14,9 @@
 import { request } from './zhihu.js'
 
 // 长 include：正文 content + 问题 + 作者 + 计数，照抄知乎自己 SSR next 里那一串
+// ip_info 是我们自己加的（实测 answers 与 feeds 两个端点都认，返回「IP 属地河南」）
 const INCLUDE =
-  'data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt'
+  'data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt,ip_info'
 
 function cleanNext(url) {
   return (url ?? '').replace('zhihu.com//api', 'zhihu.com/api')
@@ -39,6 +40,7 @@ export function normalizeAnswer(a, questionFallback = null) {
     thanksCount: pick(a, 'thanksCount', 'thanks_count') ?? 0,
     createdTime: pick(a, 'createdTime', 'created_time') ?? null,
     updatedTime: pick(a, 'updatedTime', 'updated_time') ?? null,
+    ipInfo: pick(a, 'ipInfo', 'ip_info') ?? null,
     url: pick(a, 'url', 'url') ?? null,
     author: a.author
       ? {
