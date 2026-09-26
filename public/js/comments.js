@@ -97,7 +97,7 @@ function commentEl(c, { child = false } = {}) {
   if (ip) {
     const s = document.createElement('span')
     s.className = 'c-time'
-    s.textContent = `IP 属地${ip}`
+    s.textContent = ip
     head.appendChild(s)
   }
   el.appendChild(head)

@@ -40,7 +40,7 @@ export function normalizeAnswer(a, questionFallback = null) {
     thanksCount: pick(a, 'thanksCount', 'thanks_count') ?? 0,
     createdTime: pick(a, 'createdTime', 'created_time') ?? null,
     updatedTime: pick(a, 'updatedTime', 'updated_time') ?? null,
-    ipInfo: pick(a, 'ipInfo', 'ip_info') ?? null,
+    ipInfo: (pick(a, 'ipInfo', 'ip_info') ?? '').replace(/^IP\s*属地/, '') || null,
     url: pick(a, 'url', 'url') ?? null,
     author: a.author
       ? {
