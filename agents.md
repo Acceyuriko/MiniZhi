@@ -93,10 +93,25 @@
     （都回落知乎默认的“热度”口径），所以“时间排序”仍必须用
     `feeds?limit=N&order=updated&include=<长 include>`（实测严格按 updated_time
     倒序）；feeds 分页是 **cursor**，两者 next 口径不同，续页代码不要混。
-  - 旧式 `/api/v4/answers/{id}?include=...` **现在也能用了**（实测 200 且带正文）；
-    问题详情 `/api/v4/questions/{qid}` 只给 title/id/created，
-    **不给 answer_count/follower_count**（`include=*` 反而 400）→ 问题页头部的
-    “N 个回答 / N 关注”计数目前无来源，界面直接不显示。
+  - 旧式 `/api/v4/answers/{id}?include=...` **现在也能用了**（实测 200 且带正文）。
+  - **问题描述（detail）与计数：必须写进 include 才有**（2026-09 修，此前的问题是
+    前端有展示代码、include 里没这个字段 → 页面永远不显示描述）：
+    - 描述：include 加 `question.detail`（**不能写 `data[*].question.detail`，实测返回空**），
+      answers（热度）与 feeds（时间）**两个端点都认**，零额外请求；
+    - 计数：回答里的 question 对象**永远没有** answer_count/follower_count，
+      只能另取 `GET /api/v4/questions/{qid}?include=answer_count,follower_count,comment_count`，
+      实测这次能拿到（如 108 回答 / 141 关注 / 0 评论）→ 问题页第一页并行请求、
+      按 `{...qEntity, ...meta}` 合并（`server/lib/question.js`），首屏多 1 次请求；
+    - 旧结论「questions 端点不给计数、`include=*` 400」的原因是把 include 当通配符用，
+      它实际是**字段清单**，写 `*` 才 400。
+  - **定位来源回答会失败的真实原因**（2026-09 实测，不是 bug 但记下来）：
+    `appendMore()` 内层那 3 轮循环**只在整页都被屏蔽筛空时才继续**，正常情况下
+    一页 5 条就 break（`if (items.length > 0 || !store.nextUrl) break`），所以
+    **每次续页只加 5 条**；加上 `locate()` 上限 5 页，一共只覆盖约 30 条回答。
+    热度排序把新回答排得很靠前时（实例：某回答排在第 98 位），必然报
+    「没找到来源回答（已翻 5 页）」。要改就得动预取/上限策略；
+    **2026-09 用户看过三个选项后选了「先不动，先观察」**，所以现状是预期行为，
+    别再当 bug 去修。
   - 旧式 offset feeds `paging.next` 的 `zhihu.com//api/` **双斜杠怪癖**依旧存在，
     使用前必须清洗；snake_case 回答 content 字段与正文同在 target 上。
 - **排序语义实测**：问题 feeds `order=updated` → 按 updated_time 严格倒序（可作

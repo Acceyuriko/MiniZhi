@@ -15,8 +15,14 @@ import { request } from './zhihu.js'
 
 // 长 include：正文 content + 问题 + 作者 + 计数，照抄知乎自己 SSR next 里那一串
 // ip_info 是我们自己加的（实测 answers 与 feeds 两个端点都认，返回「IP 属地河南」）
+// question.detail 也是自己加的：只写 question 时知乎不返回问题描述，页面就空着；
+// 加了才有（实测 454 字）。注意必须写 question.detail，写 data[*].question.detail 返回空。
 const INCLUDE =
-  'data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt,ip_info'
+  'data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,question.detail,excerpt,ip_info'
+
+// 问题自身的字段（回答数/关注数）不在回答里，只能单独取。
+// 实测：include 必须是字段清单才生效（include=* 反而 400）。
+const QUESTION_INCLUDE = 'detail,answer_count,follower_count,comment_count'
 
 function cleanNext(url) {
   return (url ?? '').replace('zhihu.com//api', 'zhihu.com/api')
@@ -84,6 +90,11 @@ function updatedUrl(qid, limit) {
   return `/api/v4/questions/${qid}/feeds?limit=${limit}&order=updated&include=${encodeURIComponent(INCLUDE)}`
 }
 
+/** 问题自身的字段（描述全文 + 回答数/关注数）；回答列表里没有这些 */
+function questionMeta(qid) {
+  return request(`/api/v4/questions/${qid}?include=${encodeURIComponent(QUESTION_INCLUDE)}`)
+}
+
 /**
  * 问题页第一页。
  * default = 热度：answers 端点（offset 分页，自带正文）。
@@ -92,13 +103,16 @@ function updatedUrl(qid, limit) {
 export async function questionFirstPage(qid, { order = 'default', limit = 5 } = {}) {
   if (!/^\d+$/.test(String(qid))) throw Object.assign(new Error('问题 id 不合法'), { status: 400 })
   const isUpdated = order === 'updated'
-  const json = await request(isUpdated ? updatedUrl(qid, limit) : answersUrl(qid, limit))
+  const [json, meta] = await Promise.all([
+    request(isUpdated ? updatedUrl(qid, limit) : answersUrl(qid, limit)),
+    questionMeta(qid),
+  ])
   const rows = (json.data ?? []).map((d) => d.target ?? d)
   const answers = rows.map((d) => normalizeAnswer(d)).filter(Boolean)
-  // 问题标题等头信息：answers/feeds 的每条都带 question 字段，取第一条的即可
+  // 标题等头信息：answers/feeds 的每条都带 question 字段，取第一条的即可
   const qEntity = rows[0]?.question ?? null
   return {
-    question: normalizeQuestion(qEntity) ?? { id: String(qid), title: '' },
+    question: normalizeQuestion({ id: qid, ...qEntity, ...meta }) ?? { id: String(qid), title: '' },
     answers,
     nextUrl: cleanNext(json.paging?.next ?? ''),
     order: isUpdated ? 'updated' : 'default',
