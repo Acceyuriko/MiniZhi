@@ -50,6 +50,7 @@ export async function playVideoIn(videoId, contentId, holder) {
     const video = document.createElement('video')
     video.controls = true
     video.autoplay = true
+    video.muted = true
     video.style.cssText = 'width:100%;aspect-ratio:16/9;background:#000;display:block;'
     if (mp4Url && /\.mp4(\?|$)/i.test(mp4Url)) {
       video.src = api.mediaUrl(mp4Url)
